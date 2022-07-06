@@ -40,3 +40,4 @@ vignettes/*.pdf
 kc_prioitizeR.Rproj
 
 /dev
+.DS_Store
