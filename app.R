@@ -1,4 +1,3 @@
-library(rhandsontable)
 
 ## Create main app ui ---------------------
 #
