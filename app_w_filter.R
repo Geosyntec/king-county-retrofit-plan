@@ -230,41 +230,41 @@ ui_home <-
   )
 
 
-server_home <- function(input, output, session) {
-
-
-  rv <- reactiveValues()
-
-  rv$data <- test_data
-  rv$shps <- NULL
-
-
-
-    #  rv <- dev_server('main',rv)
-
-    updateTabItems(session, inputId = "sidebar_menu", selected = "filter_locations")
-
-    filter_locations_server("main", rv) # returns a reactive value df
-
-
-
-
-  observeEvent(input$ws_select, {
-
-
-    print("CITY")
-    print(rv$city)
-    print("DATA")
-    #print(rv$data)
-    print("SHPS")
-    print(rv$shps)
-
-   # mod_ws_inventory_server("main",rv)
-    updateTabItems(session, inputId = "sidebar_menu", selected = "wsmap")
-  })
- # mod_mcda_outer_server("main",rv)
-  observe(print(rv$user_cols))
-}
+server_home <- function(input, output, session) {}
+#
+#
+#   rv <- reactiveValues()
+#
+#   rv$data <- test_data
+#   rv$shps <- NULL
+#
+#
+#
+#     #  rv <- dev_server('main',rv)
+#
+#     updateTabItems(session, inputId = "sidebar_menu", selected = "filter_locations")
+#
+#     filter_locations_server("main", rv) # returns a reactive value df
+#
+#
+#
+#
+#   observeEvent(input$ws_select, {
+#
+#
+#     print("CITY")
+#     print(rv$city)
+#     print("DATA")
+#     #print(rv$data)
+#     print("SHPS")
+#     print(rv$shps)
+#
+#    # mod_ws_inventory_server("main",rv)
+#     updateTabItems(session, inputId = "sidebar_menu", selected = "wsmap")
+#   })
+#  # mod_mcda_outer_server("main",rv)
+#   observe(print(rv$user_cols))
+# }
 
 
 

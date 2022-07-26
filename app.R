@@ -126,9 +126,9 @@ home <- function() {
 #' @return tabPanel for dashboard
 filter_locations <- function() {
   tabItem(
-    tabName = "filter_locations",
-    filter_locations_UI("main",
-                        accept_button = actionButton(inputId = "ws_select", "Save Watersheds", icon = icon("check"))),
+    tabName = "filter_locations"
+    #filter_locations_UI("main",
+     #                   accept_button = actionButton(inputId = "ws_select", "Save Watersheds", icon = icon("check"))),
 
     # )
   )
@@ -236,7 +236,7 @@ server_home <- function(input, output, session) {
 
   rv <- reactiveValues()
 
-  rv$data <- test_data
+  rv$data <- NULL
   rv$shps <- NULL
 
 
@@ -245,30 +245,12 @@ server_home <- function(input, output, session) {
 
     updateTabItems(session, inputId = "sidebar_menu", selected = "filter_locations")
 
-    filter_locations_server("main", rv) # returns a reactive value df
+    #filter_locations_server("main", rv) # returns a reactive value df
 
 
 
 
-  observeEvent(input$ws_select, {
-
-
-    print("CITY")
-    print(rv$city)
-    print("DATA")
-    #print(rv$data)
-    print("SHPS")
-    print(rv$shps)
-
-   # mod_ws_inventory_server("main",rv)
-    updateTabItems(session, inputId = "sidebar_menu", selected = "wsmap")
-  })
- # mod_mcda_outer_server("main",rv)
-  observe(print(rv$user_cols))
 }
-
-
-
 
 
 shinyApp(ui_home, server_home)
