@@ -1,116 +1,277 @@
 library(rhandsontable)
-library(htmlwidgets)
-library(visNetwork)
-library(tidyr)
-library(dplyr)
-load("~/kingCoDecision/data/test_data.rda")
-#source("~/kingCoDecision/R/fct_helpers.R")
-base_data <- test_data %>% select(c(10:36)) %>% head(100) %>% select(-c(MedianPavementCondition,starts_with('WQBE'))) %>%
-  na.omit()
-#base_data <- cars_example
 
-criteria <- colnames(base_data)
-
-library(shinydashboard)
-ui <- dashboardPage(header = dashboardHeader(),sidebar = dashboardSidebar(), body = dashboardBody(
-
-  #bulmaSection(
-
-
-
-#ui <- bslib::page_fluid(theme = bslib::bs_theme(version = 5,bootswatch = "materia"),
-#  titlePanel("beta"),
+## Create main app ui ---------------------
 #
-
-  #   sidebarPanel(
-  #     helpText("Handsontable demo output. Column add/delete does work ",
-  #              "for tables with defined column properties, including type."),
-  #     radioButtons("useType", "Use Data Types", c("TRUE", "FALSE"))
-  #   ),
-    #mainPanel(
-
-          fluidRow(
-        box(width = 4,
-      h2("Summary Table"),
-        wellPanel(
-      rHandsontableOutput("summary_table")),
-      #box(width = 6,
-        h2("Input Data"),
-      wellPanel(
-      rHandsontableOutput("hot"))),
-      box(width = 8,title = 'network diagram',height='1200px',
-  visNetworkOutput("pflows",height="1000px"))),
-  #box(width = 12, fluidRow(verbatimTextOutput('table')))
+#' generate the main page
+#'
+#' @return home tabItem for use in dashboardPage
+#' @import shiny
+home <- function() {
+  tabItem(
+    tabName = "home",
+    tags$style(".fa-home {color:#00abe7}"),
+    tags$style(".fa-filter {color:#00abe7}"),
+    tags$style(".fa-building {color:#00abe7}"),
+    tags$style(".fa-sliders {color:#00abe7}"),
+    tags$style(".fa-user-edit {color:#00abe7}"),
+    tags$style(".fa-tasks {color:#00abe7}"),
+    # absolutePanel(
+    #   top = 0, left = 0, right = 0, height = "100%", fixed = TRUE,
+    # tags$img(
+   # shinyWidgets::setBackgroundImage(shinydashboard = TRUE,
+                                  #   src = "img4.jpg"
+    #),
+    # style ='opacity: 0.8')
     #)
+    #),
+    div(class="d-flex justify-content-center",
+        fluidRow(column(
+          width = 12,
+          p(),
+          # absolutePanel(
+          # top = 100,
+          # title, etc,
+          # width = "100%",
+          align = "center",
+          style = "font-family: Tahoma, Georgia, Verdana, sans-serif;font-size: 100px; color:#ffffff;",
+          "SMAPr",
+          h4(
+            "Stormwater Action Planning for",
+            br(),
+            "the Green/Duwamish Watershed"
+          )
+        )),
+        br(),
+        fluidRow(column(
+          width = 8,
+          offset = 2,
+          align = "center",
+
+          shiny::actionButton(inputId = "go_button", label = "Get Started")
+        )),
+        br(), br(), br(), # br(),br(),br(),
+
+        # column(width = 12,
+        # absolutePanel(left = 0,right= 0, bottom =0, height= "40%", style = "background-color:#ffffff;
+        #               opacity:0.6"),
+        fluidRow(
+          # absolutePanel(left = 0,right= 0,
+          #   top = 100,
+          # box(width = 12, solidHeader = TRUE,
+
+          # fluidRow(column(width = 8, offset = 2,
+          # shinydashboard::box(width = 3,height = 500,
+          #
+          #     #box(
+          #       title= (htmltools::browsable(tags$i(class = "far fa-building fa-3x"))),
+          #
+          #       solidHeader = FALSE,
+          #       collapsible = FALSE,
+          #
+          #    h3("Select your city"),
+          #    h5("SMAPr applies to every city in the Green/Duwamish Watershed")
+          #     ),
+
+          # div(class = "container",
+          column(width = 12, align = "center",
+                 div(class="d-flex justify-content-center",
+                     div(#class = "col-sm-6 col-md-12 col-lg-12",
+                       column(width =
+                                8, offset = 2,
+                              shinydashboard::box(
+                                width = 12, # status = "primary",
+                                solidHeader = TRUE,
+                                fluidRow(column(12,
+                                                # align = "center",
+                                                style = 'font-family:"Segoe UI", Arial, sans-serif; font-weight:400;
+
+                               font-size:30px; color:#263238;',
+                                                ("How SMAPr Works")
+                                )),
+                                hr(),
+                                column(
+                                  4,
+                                  (htmltools::browsable(tags$i(class = "fas fa-check-double fa-3x"))),
+                                  h3("Select your watersheds"),
+                                  h5("Choose which watersheds to prioritize. Clip watersheds to your city or
+               include watersheds you share with neighbors.")
+                                ),
+                                # box(width = 12, status = "primary",
+                                column(
+                                  4,
+                                  (htmltools::browsable(tags$i(class = "fas fa-user-edit fa-3x"))),
+                                  h3("Build your Inventory"),
+                                  h5("SMAPr applies to every city in the Green/Duwamish Watershed")
+                                ),
+                                # box(width = 12, status = "primary",
+                                column(
+                                  4,
+                                  (htmltools::browsable(tags$i(class = "fas fa-tasks fa-3x"))),
+                                  h3("Prioritize Watersheds"),
+                                  h5("Find the highest priority watershed based on criteria you choose.")
+                                )
+                              )))))
+
+          #   )
+
+        )
+
+    )
+  )
+}
+
+# app pages
+###
+#' watershed selection page -------
+#'
+#' @return tabPanel for dashboard
+filter_locations <- function() {
+  tabItem(
+    tabName = "filter_locations",
+    filter_locations_UI("main",
+                        accept_button = actionButton(inputId = "ws_select", "Save Watersheds", icon = icon("check"))),
+
+    # )
+  )
+}
+
+# app pages
+###
+#' watershed inventory page ----------------
+#'
+#' @return tabPanel for dashboard
+watershed_inventory <- function() {
+  tabItem(
+    tabName = "watershed_inventory"
+  )
+}
+
+#' priorize basins page
+#'
+#' @return tabPanel for dashboard
+#'
+prioritize_basins <- function() {
+  tabItem(
+    "prioritize_basins",
+    # h1('priorize page'),
+    #mod_mcda_outer_UI("main")
+    #mod_decision_support_ui("dev")
+  )
+}
+
+#' For debugging
+#'
+#' @return tabPanel for dashboard
+#'
+devpage <- function() {
+  tabPanel(
+    title = "dev",
+    id = "dev",
+    dev_ui("main")
+  )
+}
+
+
+
+# build ui
+ui_home <-
+  shinydashboard::dashboardPage(
+    #skin = "black",
+
+    #fresh::use_theme(ogd_theme), # <-- use the theme
+
+    # footer = shinydashboardPlus::dashboardFooter(
+    #   left = p("version 0.2"),
+    #   right =p("©2021 Geosyntec Consultants, Inc.",
+    #   (HTML(
+    #       paste0(
+    #         "Licensed under Mozilla Public License Version 2.0",
+    #         a(href = "https://stackoverflow.com/")
+    #       )
+    #     )
+    #   )
+    # )),
+    title = "Stormwater Retrofits Prioritizer",
+    header = shinydashboardPlus::dashboardHeader(title = "Stormwater Retrofits Prioritizer"),
+    sidebar = shinydashboardPlus::dashboardSidebar(
+      #id = "sidebar",
+      sidebarMenu(
+        id = "sidebar_menu",
+        #menuItem("Home", icon = icon("home"), tabName = "home"),
+        menuItem("Filter Locations", icon = icon("filter"), tabName = "filter_locations"),
+        #menuItem("Build Watershed Inventory", icon = icon("user-edit"), tabName = "wsmap"),
+        menuItem("Prioritize Basins", icon = icon("tasks"), tabName = "prioritize_basins")
+        #menuItem("dev", icon = icon("bug"), tabName = "dev")
+      )
+    ),
+    body = shinydashboard::dashboardBody(
+      # tags$head(
+      # tags$style(HTML('
+      # .form-group, .selectize-control {
+      #      margin-bottom: 2px;
+      # }
+      # .col-sm-3 {padding: 0px;margin: 0px;
+      # }
+      #
+      # .box-body {
+      #     padding: 2px;
+      # }'))
+      # ),
+      tabItems(
+        tabItem("home", home()),
+        tabItem(tabName = "filter_locations", filter_locations()),
+        # ,
+
+
+        tabItem(tabName = "wsmap", watershed_inventory()),
+        # ,
+        tabItem(tabName = "prioritize_basins",prioritize_basins())
+      )
+
+    )
   )
 
-  #))
-)
+
+server_home <- function(input, output, session) {
 
 
-server <- (function(input, output, session) {
-  # this caching step is no longer necessary
-  # it was left as an example
+  rv <- reactiveValues()
 
-  stats_table <- make_summary_table(base_data)
-
-  output$summary_table <- renderRHandsontable(
-    rhandsontable(
-    stats_table)      %>%
-      hot_col("chart", readOnly= TRUE, halign = "htCenter", renderer = htmlwidgets::JS("renderSparkline")) %>%
-    hot_col('means',readOnly= TRUE,halign = "htRight") %>%
-    hot_col('mins',readOnly= TRUE,halign = "htRight") %>%
-    hot_col('sdevs',readOnly= TRUE,halign = "htRight") %>%
-    hot_col('maxs',readOnly= TRUE,halign = "htRight"))
+  rv$data <- test_data
+  rv$shps <- NULL
 
 
-  values = reactiveValues()
-  df0 <- data.frame(
-    Criteria = criteria,
-    Selected = rep(TRUE,length(criteria)),
-    MinMax = "max",
-    weight = 0
-    )
-  data = reactive({
-    if (!is.null(input$hot)) {
-      DF = hot_to_r(input$hot)
-    } else {
-      if (is.null(values[["DF"]]))
-        DF = df0
-      else
-        DF = values[["DF"]]
-    }
+
+    #  rv <- dev_server('main',rv)
+
+    updateTabItems(session, inputId = "sidebar_menu", selected = "filter_locations")
+
+    filter_locations_server("main", rv) # returns a reactive value df
 
 
-    values[["DF"]] = DF
-    DF
+
+
+  observeEvent(input$ws_select, {
+
+
+    print("CITY")
+    print(rv$city)
+    print("DATA")
+    #print(rv$data)
+    print("SHPS")
+    print(rv$shps)
+
+   # mod_ws_inventory_server("main",rv)
+    updateTabItems(session, inputId = "sidebar_menu", selected = "wsmap")
   })
-
-  output$hot <- renderRHandsontable({
-    DF = data()
-    if (!is.null(DF))
-      rhandsontable(DF,useTypes = TRUE,rowHeaders = FALSE) %>%
-      #  hot_col("chart", readOnly= TRUE, halign = "htCenter", renderer = htmlwidgets::JS("renderSparkline")) %>%
-      # hot_col('means',readOnly= TRUE,halign = "htRight") %>%
-      # hot_col('mins',readOnly= TRUE,halign = "htRight") %>%
-      # hot_col('sdevs',readOnly= TRUE,halign = "htRight") %>%
-      # hot_col('maxs',readOnly= TRUE,halign = "htRight") %>%
-     hot_col(col = "MinMax",halign = "htCenter", type = "dropdown", strict = TRUE, source = c("min","max")) %>%
-      hot_col('weight',format = "0",type = "numeric",strict = TRUE, source = seq(0,10)) %>%
-       hot_validate_numeric(col = "weight", min = 0, max = 10) %>%
-       hot_validate_character(col = "MinMax", choice = c("min","max"))
-  })
+ # mod_mcda_outer_server("main",rv)
+  observe(print(rv$user_cols))
+}
 
 
-  mcda_output <- reactive({
-    promethee_2(dataset = base_data,weighting = values$DF$weight,minmax = values$DF$MinMax)
-  })
-  output$table <-
 
-    renderPrint(mcda_output())#values$DF$MinMax)
-  output$pflows <- renderVisNetwork(
 
-    plot_jittered_pref_flows(tolerance = 0.1, pf2 = mcda_output()[[1]],adj_mat_numeric = mcda_output()[[2]]))
-})
 
-shinyApp(ui,server)
+shinyApp(ui_home, server_home)
+
+
