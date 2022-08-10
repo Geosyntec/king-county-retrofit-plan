@@ -9,6 +9,7 @@ library(shinyWidgets)
 library(dplyr)
 library(htmltools)
 library(spdplyr)
+library(shinyBS)
 
 load(here::here("data", "subbasin_metrics.rda"))
 load(here::here("data", "subbasin_shps.rda"))
@@ -17,16 +18,20 @@ load(here::here("data", "city_lookup.rda"))
 load(here::here("data", "cities_shp.rda"))
 source(here::here("R", "fct_helpers.R"))
 
+subbasin_shps<- subbasin_shps %>% column_to_rownames('SWSID') %>% sf::st_as_sf()
 
 wria_choices <- distinct(subbasin_metrics, WQBE_basin) %>% paste()
 filter_page_UI <- function(id) {
   ns <- NS(id)
 
   tagList(# Column 1 ----------------------------------------------------------------
+          fluidRow(
           column(
             width = 5,
+            #box(width=12,
+                uiOutput(ns("num_selected")),
             # Box to hold data filters
-            shinydashboardPlus::box(
+            shinydashboardPlus::box(height="60rem",
               title = "Filters",
               closable = FALSE,
               width = 12,
@@ -44,7 +49,8 @@ filter_page_UI <- function(id) {
                 choices = distinct(subbasin_metrics, WQBE_basin),
                 multiple = TRUE,
                 options = list(`actions-box` = TRUE),
-              ),
+              ) %>% tipify( title="This is an example of a tooltip", placement = "right", trigger = "hover",
+                           options = NULL),
 
               #Jurisdiction
               pickerInput(
@@ -93,9 +99,8 @@ filter_page_UI <- function(id) {
                     )
                   )
                 )
-              ),
-              box(width=12,
-              uiOutput(ns("num_selected")))
+              )
+
               # checkboxGroupButtons(
               #   size = 'xs',direction = 'vertical',width= "90%",
               #
@@ -136,19 +141,21 @@ filter_page_UI <- function(id) {
             #   collapsible = TRUE,
             #   "Map"),
 
-            tabBox(
+            tabBox(height = "60%",
               title = "",
               # closable = FALSE,
               width = 12,
               #solidHeader = TRUE,
               #collapsible = TRUE,
-              tabPanel("Table",
-                       DTOutput(outputId = ns("hot"))),
-              tabPanel("Map", leafletOutput(ns("map"))),
+              tabPanel("Map", leafletOutput(ns("map"),height="60rem")),
               tabPanel('Debug',  verbatimTextOutput(ns("message")))
 
-            )
-          ))
+            ))),
+            (column(width = 12,
+              box(width = 12, "Table",
+                       DTOutput(outputId = ns("hot"))),
+            ))
+          )
 
 
 }
@@ -197,6 +204,7 @@ filter_page <- function(id) {
                    #if(!is.null(c(wria_vals(),city_vals(),imperv_vals(),checks()))) { #if sliders not null
                    #then filter
                    subbasin_metrics %>%
+                     column_to_rownames("SWSID") %>%
                      #wria filter
                      dplyr::filter(WQBE_basin %in% wria_vals()) %>%
 
@@ -241,7 +249,7 @@ filter_page <- function(id) {
                      dplyr::select(
                        #only show a set of cols,
                        c(
-                         SWSID,
+                         #SWSID,
                          WQBE_basin,
                          Imperviousness,
                          Presence_of_Shellfish,
@@ -255,9 +263,9 @@ filter_page <- function(id) {
                    DT::datatable(
                      display_table(),
                      rownames = TRUE,
-                     style = "bootstrap5",
+                   #  style = "bootstrap5",
                      options = list(dom = 'tp', scrollX = TRUE),
-                     extensions = 'Responsive'
+                   #  extensions = 'Responsive'
                    ) %>% DT::formatPercentage("Imperviousness", 0)
                  )
                  #
@@ -280,23 +288,76 @@ filter_page <- function(id) {
                  #   value = data.df() %>% nrow(),
                  #   color = "blue"
                  # ))
+
+                 table_info = reactive(
+
+                  # input$hot_rows_selected, {
+                   {
+                     if(length(input$hot_rows_selected)){
+                   row.names(data.df())[c(input$hot_rows_selected)]
+                     }else{
+                       row.names(data.df())
+                     }
+                   })
+
+
                  output$message =   renderText(c(
-                   "headwaters",
-                   headwaters(),
-                   "swimming",
-                   swimming(),
-                   "P lakes",
-                   P_lakes()
+                   # "headwaters",
+                   # headwaters(),
+                   # "swimming",
+                   # swimming(),
+                   # "P lakes",
+                   # P_lakes(),
+                   "rows selected",
+                   table_info()
                  ))
 
 
-                 output$map <-
-                   renderLeaflet(leaflet() %>% addTiles() %>% setView(
+                 output$map <-renderLeaflet({
+
+
+
+                   # basins_selected = input$hot_rows_selected
+                   leaflet() %>%
+                       addProviderTiles("CartoDB.DarkMatter", group = "Dark") %>%
+                       addProviderTiles("Esri.WorldGrayCanvas", group = "Grey") %>%
+                       addProviderTiles("Esri.WorldImagery", group = "Satellite") %>%
+                       addLayersControl(position = "bottomright",options = layersControlOptions(collapsed = FALSE),
+                                        baseGroups = c( "Grey", "Satellite","Dark")) %>%
+                         setView(
                      lng = (-122.2),
                      lat = (47.6),
                      zoom = 7
-                   ))
+                   )})
 
+                 shps_selected <- reactive({
+
+                   subbasin_shps[rownames(subbasin_shps) %in% table_info(), ]
+                 })
+
+
+# observer for map  -------------------------------------------------------
+
+                 observe({
+
+
+                   leafletProxy("map", data = shps_selected()) %>%
+                     clearShapes() %>%
+                     #add polygons
+
+                   addPolygons(
+                               opacity = 1,
+                               color = "green",
+                               weight = 0.5,
+                               #dashArray = 1,
+                               fillOpacity = 0.6,
+                               fillColor = "green"
+
+                   )
+
+
+
+                 })
                  # End mod server ----------------------------------------------------------
 
 

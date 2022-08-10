@@ -5,7 +5,7 @@ library(sf)
 subbasin_shps <- sf::read_sf(here::here(
   "data-raw/source_data",
   "Subwatershed_Metrics_Complete_Export.shp"
-))%>% st_zm() %>% st_transform("EPSG:3857")
+))%>% st_zm() %>% st_transform("EPSG:4326")
 
 usethis::use_data(subbasin_shps,overwrite = TRUE)
 
@@ -33,9 +33,9 @@ king_co_server <-
   "https://gisdata.kingcounty.gov/arcgis/rest/services"
 cities_url <- "OpenDataPortal/admin___base/MapServer/446"
 kingco_url <- paste(king_co_server, cities_url, sep = "/")
-cities_shp <- get_spatial_layer(kingco_url) %>% st_transform("EPSG:3857") %>%
+cities_shp <- get_spatial_layer(kingco_url) %>% st_transform("EPSG:4326") %>%
   st_zm() %>%
-  dplyr::select("CITYNAME")
+  dplyr::select(c(CITYNAME))
 
 city_names <- cities_shp %>%
   sf::st_drop_geometry() %>%
