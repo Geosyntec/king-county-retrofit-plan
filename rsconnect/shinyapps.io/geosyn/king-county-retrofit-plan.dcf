@@ -1,0 +1,14 @@
+name: king-county-retrofit-plan
+title: king-county-retrofit-plan
+username:
+account: geosyn
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 6766769
+bundleId: 6189754
+url: https://geosyn.shinyapps.io/king-county-retrofit-plan/
+when: 1660168487.11989
+lastSyncTime: 1660168487.1199
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: .Rbuildignore|.RData|app_frame.R|app_mod_import.R|app_w_filter.R|DESCRIPTION|LICENSE|man/run_app.Rd|R/filter_example.R|R/mod-table-map.R|R/mod-table-ogd.R|R/promethee.R|README.md|test_image.R|tests/test_mcda.R|tests/test_pf_plot.R|www/bkrnd1.jpg|www/bkrnd2.jpg|www/img3.jpg|www/img4.jpg|correlation_analysis|data-raw|dev

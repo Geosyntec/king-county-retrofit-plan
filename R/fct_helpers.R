@@ -1,13 +1,11 @@
-
+library(leaflet)
 #return watersheds that intersect a boundary
-get_intersecting_polygons <- function(right,left,id_col="SWSID"){
+get_intersecting_ids <- function(right,left,id_col="SWSID"){
   sf::sf_use_s2(FALSE)
   suppressWarnings(
-   sf::st_intersection(left,right) %>% sf::st_drop_geometry() %>%
-     select(all_of(id_col)) %>% distinct()
-
+   sf::st_intersection(right,left) %>% sf::st_drop_geometry() %>%
+     pull(id_col)
    )
-
 }
 
 

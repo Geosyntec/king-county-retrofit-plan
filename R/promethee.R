@@ -1,6 +1,7 @@
 library(dplyr)
 library(MCDA)
 library(tibble)
+library(leaflet)
 promethee_2 <-  function(dataset=NULL,
                          #,
                          #name_col = "watershed.name",
