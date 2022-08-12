@@ -145,6 +145,7 @@ filter_page <- function(id, metrics) {
                  wria_vals <- reactive(input$wriapicker)
 
                  city_vals <- reactive(input$jurisdictionpicker)
+
                  swimming <- reactive((if (input$check1) {
                    return(c(TRUE))
                  }
@@ -171,16 +172,19 @@ filter_page <- function(id, metrics) {
                  }))
 
                  city_bounds <- reactive({
-                   #list of selected cities
-                   cities_shp %>% filter(CITYNAME %in% input$jurisdictionpicker)
 
+                   #list of selected cities
+                   cities_shp %>% filter(CITYNAME %in% city_vals())
                  })
 
 
                  spatial_filter_ids <- reactive({
+                   if(!is.null(city_vals())){
                    #list of selected cities
                    get_intersecting_ids(city_bounds(),subbasin_shps)
-
+                   }else{
+                     row.names(metrics)
+                   }
                  })
 
 
@@ -322,23 +326,46 @@ filter_page <- function(id, metrics) {
 
 # map observer  -------------------------------------------------------
 #
-                 observeEvent(input$jurisdictionpicker,{
-                   leafletProxy("map", data = city_bounds()) %>%
-                     removeShape("City") %>%
-                     addPolygons(layerId = "City")
-                 })
+                 observe({
+                   if(length(city_vals())!=0){
+
+                  print(length(city_vals()))
+
+                   leafletProxy("map") %>%
+                     clearGroup('City') %>%
+                       addPolygons(data = city_bounds(), group = "City",
+                                   color='#927EAB',
+                                   opacity = 1,
+                                   weight = 3,
+                                   #dashArray = 1,
+                                   fillOpacity = 0.25
+                                   )
+
+                   } else{
+                     print(length(city_vals()))
+                   leafletProxy("map") %>%
+                     clearGroup('City')
+                 }})# %>% bindEvent(input$jurisdictionpicker)
+
+
+                 observe({
+                   if(length(city_vals())==0){
+                   print(length(city_vals()))
+                   leafletProxy("map") %>%
+                     clearGroup('City')
+                 }})%>% bindEvent(input$jurisdictionpicker)
 
                  observe({
                    leafletProxy("map", data = shps_selected()) %>%
-                     clearShapes() %>%
+                     clearGroup('subbasins') %>%
                      #add polygons
 
-                   addPolygons(
-                               opacity = 0.9,
+                   addPolygons(group =  'subbasins',
+                               opacity = 0.6,
                                color = "green",
-                               weight = 1,
+                               weight = 0.5,
                                #dashArray = 1,
-                               fillOpacity = 0.2,
+                               fillOpacity = 0.1,
                                fillColor = "green"
 
                    )
@@ -354,10 +381,10 @@ filter_page <- function(id, metrics) {
                      # swimming(),
                      # "P lakes",
                      # P_lakes(),
-                     "length:",
-                     length(spatial_filter_ids()),
+                     "citybounds:",
+                     city_vals() %>% unlist(),
                      "merge:",
-                     spatial_filter_ids() %>% unlist()
+                     length(city_vals())
 
                      #spatial_filter_ids() %>% unlist(),
                      #"cities:"
