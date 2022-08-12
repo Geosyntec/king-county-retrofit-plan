@@ -139,6 +139,8 @@ filter_page_UI <- function(id) {
 
 }
 
+# Server ------------------------------------------------------------------
+
 filter_page <- function(id, metrics) {
   moduleServer(id,
                function(input, output, session) {
@@ -312,11 +314,14 @@ filter_page <- function(id, metrics) {
                        addProviderTiles("Esri.WorldImagery", group = "Satellite") %>%
                        addLayersControl(position = "bottomright",options = layersControlOptions(collapsed = FALSE),
                                         baseGroups = c( "Grey", "Satellite","Dark")) %>%
+                     addPolygons(data = subbasin_shps, group = 'selected_sheds') %>%
+
                          setView(
                      lng = (-122.2),
                      lat = (47.6),
                      zoom = 7
-                   )})
+                   )
+                   })
 
                  shps_selected <- reactive({
 
@@ -324,12 +329,26 @@ filter_page <- function(id, metrics) {
                  })
 
 
-# map observer  -------------------------------------------------------
+# map observers  -------------------------------------------------------
 #
+
+                 observeEvent(shps_selected(),{ leafletProxy("map") %>%
+                     clearGroup('selected_sheds') %>%
+                     addPolygons(data = shps_selected(), group = "selected_sheds",
+
+                                 opacity = 0.6,
+                                 color = "green",
+                                 weight = 0.5,
+                                 #dashArray = 1,
+                                 fillOpacity = 0.1,
+                                 fillColor = "green")
+                   })
+
+                 #add city if selected
                  observe({
                    if(length(city_vals())!=0){
 
-                  print(length(city_vals()))
+
 
                    leafletProxy("map") %>%
                      clearGroup('City') %>%
@@ -337,40 +356,48 @@ filter_page <- function(id, metrics) {
                                    color='#927EAB',
                                    opacity = 1,
                                    weight = 3,
-                                   #dashArray = 1,
+
                                    fillOpacity = 0.25
                                    )
 
                    } else{
-                     print(length(city_vals()))
+
                    leafletProxy("map") %>%
                      clearGroup('City')
                  }})# %>% bindEvent(input$jurisdictionpicker)
 
 
-                 observe({
-                   if(length(city_vals())==0){
-                   print(length(city_vals()))
-                   leafletProxy("map") %>%
-                     clearGroup('City')
-                 }})%>% bindEvent(input$jurisdictionpicker)
+                 # observe({
+                 #   if(length(city_vals())==0){
+                 #   print(length(city_vals()))
+                 #   leafletProxy("map") %>%
+                 #     clearGroup('City')
+                 # }})%>% bindEvent(input$jurisdictionpicker)
 
-                 observe({
-                   leafletProxy("map", data = shps_selected()) %>%
-                     clearGroup('subbasins') %>%
-                     #add polygons
+                 #observe table select
+                 # observe({
+                 #   leafletProxy("map", data = shps_selected()) %>%
+                 #     clearGroup('subbasins') %>%
+                 #     #add polygons
+                 #
+                 #   addPolygons(layerId =  'subbasins',
+                 #               opacity = 0.6,
+                 #               color = "green",
+                 #               weight = 0.5,
+                 #               #dashArray = 1,
+                 #               fillOpacity = 0.1,
+                 #               fillColor = "green"
+                 #
+                 #   )
+                 # })
 
-                   addPolygons(group =  'subbasins',
-                               opacity = 0.6,
-                               color = "green",
-                               weight = 0.5,
-                               #dashArray = 1,
-                               fillOpacity = 0.1,
-                               fillColor = "green"
 
-                   )
-
-
+                   #observe map click
+                   observeEvent(input$map_shape_click, { # update the location selectInput on map clicks
+                     p <- input$map_shape_click
+                     pt.df <- data.frame(x= p['lat'],y=p['lng'])
+                     print(pt.df)
+                   }) #%>% bindEvent(input$map)
 # debug -------------------------------------------------------------------
 
 
@@ -393,7 +420,7 @@ filter_page <- function(id, metrics) {
                      #table_info()
                    ))
 
-                 })
+
                  # End mod server ----------------------------------------------------------
 
 
