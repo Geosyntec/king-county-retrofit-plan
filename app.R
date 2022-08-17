@@ -1,447 +1,259 @@
-library(shiny)
-library(leaflet)
-library(reactable)
-library(crosstalk)
-library(shinydashboard)
-library(shinydashboardPlus)
-library(DT)
-library(shinyWidgets)
-library(dplyr)
-library(htmltools)
+# load data
 library(spdplyr)
-library(shinyBS)
-
 load(here::here("data", "subbasin_metrics.rda"))
-load(here::here("data", "subbasin_shps.rda"))
-load(here::here("data", "city_names.rda"))
-load(here::here("data", "city_lookup.rda"))
-load(here::here("data", "cities_shp.rda"))
-source(here::here("R", "fct_helpers.R"))
-
-subbasin_shps<- subbasin_shps #%>% #tibble::column_to_rownames('SWSID') %>%
-  #sf::st_as_sf()
-
-wria_choices <- subbasin_metrics$WQBE_basin %>% unique()
-  distinct(subbasin_metrics, WQBE_basin) #%>% paste()
-filter_page_UI <- function(id) {
-  ns <- NS(id)
-
-  tagList(# Column 1 ----------------------------------------------------------------
-          fluidRow(
-          column(
-            width = 5,
-                uiOutput(ns("num_selected")),
-            # Box to hold data filters
-            shinydashboardPlus::box(height="60rem",
-              title = "Filters",
-              closable = FALSE,
-              width = 12,
-              solidHeader = TRUE,
-              collapsible = FALSE,
-
-              # Filter items  -----------------------------------------------------------
-              #WRIA Shared Data
-
-              #WRIA
-              fluidRow(
-              column(width = 6,
-              pickerInput(selected = wria_choices,
-                inputId = ns("wriapicker"),
-                label = "WRIA",
-                choices = wria_choices,
-                multiple = TRUE,
-                options = list(`actions-box` = TRUE),
-              ) %>% tipify( title="This is an example of a tooltip", placement = "right", trigger = "hover",
-                           options = NULL)),
-
-              #Jurisdiction
-              column(width = 6,
-                pickerInput(
-                inputId = ns("jurisdictionpicker"),
-                label = "Jurisdiction",
-                choices = city_names,
-                multiple = TRUE,
-                options = list(`actions-box` = TRUE),
-              ))),
-
-                htmltools::strong("Limit selection to:"),
-              wellPanel(
-                fluidRow(
-                  column(
-                    width = 6,
-                    awesomeCheckbox(
-                      inputId = ns("check1"),
-                      label = "Swimming Beaches",
-                      value = FALSE
-                    ),
-                    awesomeCheckbox(
-                      inputId = ns("check2"),
-                      label = "Phosphorus Sensitive Lakes",
-                      value = FALSE
-                    )
-                  ),
-                  column(
-                    width = 6,
-                    awesomeCheckbox(
-                      inputId = ns("check3"),
-                      label = "Headwaters",
-                      value = FALSE
-                    ),
-                    awesomeCheckbox(
-                      inputId = ns("check4"),
-                      label = "Shellfish Beaches",
-                      value = FALSE
-                    )
-                  )
-                )
-              )
-            )
-          ),
-
-
-          # Column 2 ----------------------------------------------------------------
-
-
-          column(
-            width = 7,
-            # shinydashboardPlus::box(
-            #   title = "Map",
-            #   closable = TRUE,
-            #   width = 12,
-            #   solidHeader = TRUE,
-            #   collapsible = TRUE,
-            #   "Map"),
-
-            tabBox(height = "60%",
-              title = "",
-              # closable = FALSE,
-              width = 12,
-              #solidHeader = TRUE,
-              #collapsible = TRUE,
-              tabPanel("Map",
-                       shinycssloaders::withSpinner(
-
-                       leafletOutput(
-                         ns("map"),
-                         height="60rem")
-                       )
-                       ),
-              tabPanel('Debug',  verbatimTextOutput(ns("message")))
-
-            ))),
-            (column(width = 12,
-              box(width = 12, "Table",
-                  shinycssloaders::withSpinner(
-                       DTOutput(outputId = ns("hot")))),
-            ))
-          )
-
-
-}
-
-# Server ------------------------------------------------------------------
-
-filter_page <- function(id, metrics) {
-  moduleServer(id,
-               function(input, output, session) {
-                 wria_vals <- reactive(input$wriapicker)
-
-                 city_vals <- reactive(input$jurisdictionpicker)
-
-                 swimming <- reactive((if (input$check1) {
-                   return(c(TRUE))
-                 }
-                 else{
-                   return(c(TRUE, FALSE))
-                 }))
-                 P_lakes <- reactive((if (input$check2) {
-                   return(c(TRUE))
-                 }
-                 else{
-                   return(c(TRUE, FALSE))
-                 }))
-                 headwaters <- reactive((if (input$check3) {
-                   return(c(TRUE))
-                 }
-                 else{
-                   return(c(TRUE, FALSE))
-                 }))
-                 shellfish <- reactive((if (input$check4) {
-                   return(c(TRUE))
-                 }
-                 else{
-                   return(c(TRUE, FALSE))
-                 }))
-
-                 city_bounds <- reactive({
-
-                   #list of selected cities
-                   cities_shp %>% filter(CITYNAME %in% city_vals())
-                 })
-
-
-                 spatial_filter_ids <- reactive({
-                   if(!is.null(city_vals())){
-                   #list of selected cities
-                   get_intersecting_ids(city_bounds(),subbasin_shps)
-                   }else{
-                     row.names(metrics)
-                   }
-                 })
-
-
-#add jursidction if selected
-                 # observe({
-                 #
-                 #
-                 #   leafletProxy("map", data = city_bounds()) %>%
-                 #     clearShapes() %>%
-                 #   addPolygons()
-                 #
-                 # })
-
-                filtered_ids <- reactive({
-                  user_ids <- metrics %>%
-                    dplyr::filter(WQBE_basin %in% wria_vals()) %>%
-                    filter(Contains_Swimming_Beaches %in% swimming()) %>%
-                    filter(Is_Headwater_Basin %in% headwaters()) %>%
-                    filter(Presence_of_Shellfish %in% shellfish()) %>%
-                    filter(Drains_to_P_Sensitive_Lake %in% P_lakes()) %>%
-                    rownames()
-
-                  if(length(user_ids >0)){
-                    return(user_ids[user_ids %in% spatial_filter_ids()])
-                  }else{
-                    return(user_ids)
-                  }
-
-
-                }) %>%
-                  bindEvent(c(
-                    wria_vals(),
-                    headwaters(),
-                    shellfish(),
-                    P_lakes(),
-                    swimming(),
-                    city_bounds()
-                  ),
-                  ignoreInit = FALSE)
-
-
-
-                 data.df <- reactive({
-
-                   metrics[row.names(metrics) %in% filtered_ids(), ]
-                 })
-
-
-                 # #filter reactive vals
-                 #   observeEvent(input$wriapicker, {
-                 #     output$message =   renderText(input$wriapicker)
-                 #    filtered <- table_reactive$data.df %>%
-                 #       dplyr::filter(WQBE_basin %in% input$wriapicker)
-                 #   })
-                 #
-                 #   # table server
-
-                 display_table <- reactive({
-                   data.df() %>%
-                     dplyr::select(
-                       #only show a set of cols,
-                       c(
-                         #SWSID,
-                         WQBE_basin,
-                         Imperviousness,
-                         Presence_of_Shellfish,
-                         Drains_to_P_Sensitive_Lake,
-                         Is_Headwater_Basin,
-                         Contains_Swimming_Beaches
-                       )
-                     )
-                 })
-                 output$hot = renderDataTable(
-                   DT::datatable(
-                     display_table(),
-                     rownames = TRUE,
-                   #  style = "bootstrap5",
-                     options = list(dom = 'tp', scrollX = TRUE),
-                   #  extensions = 'Responsive'
-                   ) %>% DT::formatPercentage("Imperviousness", 0)
-                 )
-                 #
-                 #   output$table_1 = renderDataTable(subbasin_metrics)
-                 #
-                 # }
-
-                 #count rows
-                 output$num_selected <-
-                   shiny::renderUI(
-                     shinydashboardPlus::descriptionBlock(
-                       text = "Subbasins Selected",
-                       number = nrow(data.df()),
-
-                     )
-                   )
-
-                 #   shinydashboard::renderValueBox(valueBox(
-                 #   subtitle = 'Subbasins Selected',
-                 #   value = data.df() %>% nrow(),
-                 #   color = "blue"
-                 # ))
-
-                 table_info = reactive(
-
-                  # input$hot_rows_selected, {
-                   {
-                     if(length(input$hot_rows_selected)){
-                   row.names(data.df())[c(input$hot_rows_selected)]
-                     }else{
-                       row.names(data.df())
-                     }
-                   })
-
-
-
-
-                 output$map <-renderLeaflet({
-
-
-
-                   # basins_selected = input$hot_rows_selected
-                   leaflet() %>%
-                       addProviderTiles("CartoDB.DarkMatter", group = "Dark") %>%
-                       addProviderTiles("Esri.WorldGrayCanvas", group = "Grey") %>%
-                       addProviderTiles("Esri.WorldImagery", group = "Satellite") %>%
-                       addLayersControl(position = "bottomright",options = layersControlOptions(collapsed = FALSE),
-                                        baseGroups = c( "Grey", "Satellite","Dark")) %>%
-                     addPolygons(data = subbasin_shps, group = 'selected_sheds') %>%
-
-                         setView(
-                     lng = (-122.2),
-                     lat = (47.6),
-                     zoom = 7
-                   )
-                   })
-
-                 shps_selected <- reactive({
-
-                   subbasin_shps %>% filter(SWSID %in% filtered_ids())
-                 })
-
-
-# map observers  -------------------------------------------------------
+## Create main app ui ---------------------
 #
+#' generate the main page
+#'
+#' @return home tabItem for use in dashboardPage
+#' @import shiny
+home <- function() {
+  tabItem(
+    tabName = "home",
+    tags$style(".fa-home {color:#00abe7}"),
+    tags$style(".fa-filter {color:#00abe7}"),
+    tags$style(".fa-building {color:#00abe7}"),
+    tags$style(".fa-sliders {color:#00abe7}"),
+    tags$style(".fa-user-edit {color:#00abe7}"),
+    tags$style(".fa-tasks {color:#00abe7}"),
+    # absolutePanel(
+    #   top = 0, left = 0, right = 0, height = "100%", fixed = TRUE,
+    # tags$img(
+   # shinyWidgets::setBackgroundImage(shinydashboard = TRUE,
+                                  #   src = "img4.jpg"
+    #),
+    # style ='opacity: 0.8')
+    #)
+    #),
+    div(class="d-flex justify-content-center",
+        fluidRow(column(
+          width = 12,
+          p(),
+          # absolutePanel(
+          # top = 100,
+          # title, etc,
+          # width = "100%",
+          align = "center",
+          style = "font-family: Tahoma, Georgia, Verdana, sans-serif;font-size: 100px; color:#ffffff;",
+          "SMAPr",
+          h4(
+            "Stormwater Action Planning for",
+            br(),
+            "the Green/Duwamish Watershed"
+          )
+        )),
+        br(),
+        fluidRow(column(
+          width = 8,
+          offset = 2,
+          align = "center",
 
-                 observeEvent(shps_selected(),{ leafletProxy("map") %>%
-                     clearGroup('selected_sheds') %>%
-                     addPolygons(data = shps_selected(), group = "selected_sheds",
+          shiny::actionButton(inputId = "go_button", label = "Get Started")
+        )),
+        br(), br(), br(), # br(),br(),br(),
 
-                                 opacity = 0.6,
-                                 color = "green",
-                                 weight = 0.5,
-                                 #dashArray = 1,
-                                 fillOpacity = 0.1,
-                                 fillColor = "green")
-                   })
+        # column(width = 12,
+        # absolutePanel(left = 0,right= 0, bottom =0, height= "40%", style = "background-color:#ffffff;
+        #               opacity:0.6"),
+        fluidRow(
+          # absolutePanel(left = 0,right= 0,
+          #   top = 100,
+          # box(width = 12, solidHeader = TRUE,
 
-                 #add city if selected
-                 observe({
-                   if(length(city_vals())!=0){
+          # fluidRow(column(width = 8, offset = 2,
+          # shinydashboard::box(width = 3,height = 500,
+          #
+          #     #box(
+          #       title= (htmltools::browsable(tags$i(class = "far fa-building fa-3x"))),
+          #
+          #       solidHeader = FALSE,
+          #       collapsible = FALSE,
+          #
+          #    h3("Select your city"),
+          #    h5("SMAPr applies to every city in the Green/Duwamish Watershed")
+          #     ),
 
+          # div(class = "container",
+          column(width = 12, align = "center",
+                 div(class="d-flex justify-content-center",
+                     div(#class = "col-sm-6 col-md-12 col-lg-12",
+                       column(width =
+                                8, offset = 2,
+                              shinydashboard::box(
+                                width = 12, # status = "primary",
+                                solidHeader = TRUE,
+                                fluidRow(column(12,
+                                                # align = "center",
+                                                style = 'font-family:"Segoe UI", Arial, sans-serif; font-weight:400;
 
+                               font-size:30px; color:#263238;',
+                                                ("How SMAPr Works")
+                                )),
+                                hr(),
+                                column(
+                                  4,
+                                  (htmltools::browsable(tags$i(class = "fas fa-check-double fa-3x"))),
+                                  h3("Select your watersheds"),
+                                  h5("Choose which watersheds to prioritize. Clip watersheds to your city or
+               include watersheds you share with neighbors.")
+                                ),
+                                # box(width = 12, status = "primary",
+                                column(
+                                  4,
+                                  (htmltools::browsable(tags$i(class = "fas fa-user-edit fa-3x"))),
+                                  h3("Build your Inventory"),
+                                  h5("SMAPr applies to every city in the Green/Duwamish Watershed")
+                                ),
+                                # box(width = 12, status = "primary",
+                                column(
+                                  4,
+                                  (htmltools::browsable(tags$i(class = "fas fa-tasks fa-3x"))),
+                                  h3("Prioritize Watersheds"),
+                                  h5("Find the highest priority watershed based on criteria you choose.")
+                                )
+                              )))))
 
-                   leafletProxy("map") %>%
-                     clearGroup('City') %>%
-                       addPolygons(data = city_bounds(), group = "City",
-                                   color='#927EAB',
-                                   opacity = 1,
-                                   weight = 3,
+          #   )
 
-                                   fillOpacity = 0.25
-                                   )
+        )
 
-                   } else{
-
-                   leafletProxy("map") %>%
-                     clearGroup('City')
-                 }})# %>% bindEvent(input$jurisdictionpicker)
-
-
-                 # observe({
-                 #   if(length(city_vals())==0){
-                 #   print(length(city_vals()))
-                 #   leafletProxy("map") %>%
-                 #     clearGroup('City')
-                 # }})%>% bindEvent(input$jurisdictionpicker)
-
-                 #observe table select
-                 # observe({
-                 #   leafletProxy("map", data = shps_selected()) %>%
-                 #     clearGroup('subbasins') %>%
-                 #     #add polygons
-                 #
-                 #   addPolygons(layerId =  'subbasins',
-                 #               opacity = 0.6,
-                 #               color = "green",
-                 #               weight = 0.5,
-                 #               #dashArray = 1,
-                 #               fillOpacity = 0.1,
-                 #               fillColor = "green"
-                 #
-                 #   )
-                 # })
-
-
-                   #observe map click
-                   observeEvent(input$map_shape_click, { # update the location selectInput on map clicks
-                     p <- input$map_shape_click
-                     pt.df <- data.frame(x= p['lat'],y=p['lng'])
-                     print(pt.df)
-                   }) #%>% bindEvent(input$map)
-# debug -------------------------------------------------------------------
-
-
-                   output$message =   renderText(c(
-                     # "headwaters",
-                     # headwaters(),
-                     # "swimming",
-                     # swimming(),
-                     # "P lakes",
-                     # P_lakes(),
-                     "citybounds:",
-                     city_vals() %>% unlist(),
-                     "merge:",
-                     length(city_vals())
-
-                     #spatial_filter_ids() %>% unlist(),
-                     #"cities:"
-                     #  city_bounds() %>% unlist()
-                     #"rows selected",
-                     #table_info()
-                   ))
-
-
-                 # End mod server ----------------------------------------------------------
-
-
-               })
-}
-
-
-library(shiny)
-
-ui <- fluidPage(
-  shinydashboardPlus::dashboardPage(
-    header = dashboardHeader(),
-    sidebar = dashboardSidebar(),
-    body = shinydashboard::dashboardBody(filter_page_UI("test"))
-
-
+    )
   )
-)
-
-server <- function(input, output, session) {
-  filter_page('test',subbasin_metrics)
 }
 
-shinyApp(ui, server)
+# app pages
+###
+#' watershed selection page -------
+#'
+#' @return tabPanel for dashboard
+filter_locations <- function() {
+  tabItem(
+    tabName = "filter_locations"
+    #filter_locations_UI("main",
+     #                   accept_button = actionButton(inputId = "ws_select", "Save Watersheds", icon = icon("check"))),
+
+    # )
+  )
+}
+
+# app pages
+###
+#' watershed inventory page ----------------
+#'
+#' @return tabPanel for dashboard
+watershed_inventory <- function() {
+  tabItem(
+    tabName = "watershed_inventory"
+  )
+}
+
+#' priorize basins page
+#'
+#' @return tabPanel for dashboard
+#'
+prioritize_basins <- function() {
+  tabItem(
+    "prioritize_basins",
+    # h1('priorize page'),
+    #mod_mcda_outer_UI("main")
+    #mod_decision_support_ui("dev")
+  )
+}
+
+#' For debugging
+#'
+#' @return tabPanel for dashboard
+#'
+devpage <- function() {
+  tabPanel(
+    title = "dev",
+    id = "dev",
+    dev_ui("main")
+  )
+}
+
+
+
+# build ui
+ui_home <-
+  shinydashboard::dashboardPage(
+    #skin = "black",
+
+    #fresh::use_theme(ogd_theme), # <-- use the theme
+
+    # footer = shinydashboardPlus::dashboardFooter(
+    #   left = p("version 0.2"),
+    #   right =p("©2021 Geosyntec Consultants, Inc.",
+    #   (HTML(
+    #       paste0(
+    #         "Licensed under Mozilla Public License Version 2.0",
+    #         a(href = "https://stackoverflow.com/")
+    #       )
+    #     )
+    #   )
+    # )),
+    title = "Stormwater Retrofits Prioritizer",
+    header = shinydashboardPlus::dashboardHeader(title = "Stormwater Retrofits Prioritizer"),
+    sidebar = shinydashboardPlus::dashboardSidebar(
+      #id = "sidebar",
+      sidebarMenu(
+        id = "sidebar_menu",
+        #menuItem("Home", icon = icon("home"), tabName = "home"),
+        menuItem("Filter Locations", icon = icon("filter"), tabName = "filter_locations"),
+        #menuItem("Build Watershed Inventory", icon = icon("user-edit"), tabName = "wsmap"),
+        menuItem("Prioritize Basins", icon = icon("tasks"), tabName = "prioritize_basins")
+        #menuItem("dev", icon = icon("bug"), tabName = "dev")
+      )
+    ),
+    body = shinydashboard::dashboardBody(
+      # tags$head(
+      # tags$style(HTML('
+      # .form-group, .selectize-control {
+      #      margin-bottom: 2px;
+      # }
+      # .col-sm-3 {padding: 0px;margin: 0px;
+      # }
+      #
+      # .box-body {
+      #     padding: 2px;
+      # }'))
+      # ),
+      tabItems(
+        tabItem("home", home()),
+        tabItem(tabName = "filter_locations",
+                filter_page_UI("main")
+                ),
+        # ,
+
+
+        tabItem(tabName = "wsmap", watershed_inventory()),
+        # ,
+        tabItem(tabName = "prioritize_basins",prioritize_basins())
+      )
+
+    )
+  )
+
+
+server_home <- function(input, output, session) {
+
+
+
+
+
+
+    #  rv <- dev_server('main',rv)
+
+    updateTabItems(session, inputId = "sidebar_menu", selected = "filter_locations")
+
+    #filter_locations_server("main", rv) # returns a reactive value df
+  filter_page('main',metrics = subbasin_metrics)
+
+
+
+}
+
+
+shinyApp(ui_home, server_home)
+
+
