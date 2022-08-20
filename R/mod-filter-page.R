@@ -1,32 +1,30 @@
-library(shiny)
-library(leaflet)
-library(reactable)
-library(crosstalk)
-library(shinydashboard)
-library(shinydashboardPlus)
-library(DT)
-library(shinyWidgets)
-library(dplyr)
-library(htmltools)
-library(spdplyr)
-library(shinyBS)
 
-load(here::here("data", "subbasin_metrics.rda"))
+require(shinyBS)
+require(shiny)
+require(shinyWidgets)
+require(shinydashboard)
+require(shinydashboardPlus)
+require(DT)
+require(dplyr)
+require(spdplyr)
+
 load(here::here("data", "subbasin_shps.rda"))
 load(here::here("data", "city_names.rda"))
 load(here::here("data", "city_lookup.rda"))
 load(here::here("data", "cities_shp.rda"))
 source(here::here("R", "fct_helpers.R"))
 
-subbasin_shps<- subbasin_shps #%>% #tibble::column_to_rownames('SWSID') %>%
-  #sf::st_as_sf()
 
-wria_choices <- subbasin_metrics$WQBE_basin %>% unique()
-  distinct(subbasin_metrics, WQBE_basin) #%>% paste()
+
+wria_choices <- subbasin_data$WQBE_basin %>% unique()
+  #distinct(subbasin_data, WQBE_basin) #%>% paste()
+
 filter_page_UI <- function(id) {
   ns <- NS(id)
 
-  tagList(# Column 1 ----------------------------------------------------------------
+  tagList(
+
+    # Column 1 ----------------------------------------------------------------
           fluidRow(
           column(
             width = 4,
@@ -95,16 +93,30 @@ filter_page_UI <- function(id) {
                 )
               )
             ),
-            shinydashboard::box(width = 12,status = "primary",
-            uiOutput(ns("num_selected"))),
+
 
           shinydashboard::box(width = 12,
-                              column(width = 6,
-          shiny::actionButton(ns('reset'),label = "Reset Filters", icon = icon("undo"))),
-          column(width = 6,
-          shiny::actionButton(ns('reset'),label = "Save Subbasins", icon = icon("check"))
-)
-                              )),
+                              #fixedRow
+                                fluidRow(
+                                  column(width = 5,
+                                #column(width = 6,
+                                #wellPanel(
+                                  uiOutput(ns("num_selected")))
+                                  #)
+
+                              #    )
+                              ,
+                                (column(width = 7,shiny::actionButton(ns('reset'),label = "Reset Filters", icon = icon("undo"),width = "90%"),
+                                shiny::actionButton(ns('reset'),label = "Save Subbasins", icon = icon("check"),width = "90%"))
+
+                              ))
+                              ),#end box
+#                               column(width = 6,
+#
+#           column(width = 6,
+#
+# )
+                           ),
 
 
           # Column 2 ----------------------------------------------------------------
@@ -120,7 +132,7 @@ filter_page_UI <- function(id) {
             #   collapsible = TRUE,
             #   "Map"),
 
-            tabBox(height = "60%",
+            tabBox(#height = "60%",
               title = "",
               # closable = FALSE,
               width = 12,
@@ -149,9 +161,13 @@ filter_page_UI <- function(id) {
 
 # Server ------------------------------------------------------------------
 
-filter_page <- function(id, metrics) {
+filter_page_server <- function(id, watershed.data) {
   moduleServer(id,
                function(input, output, session) {
+                 #assign reactive values to module variables
+
+
+
                  wria_vals <- reactive(input$wriapicker)
 
                  city_vals <- reactive(input$jurisdictionpicker)
@@ -184,7 +200,7 @@ filter_page <- function(id, metrics) {
                  city_bounds <- reactive({
 
                    #list of selected cities
-                   cities_shp %>% filter(CITYNAME %in% city_vals())
+                   cities_shp %>% dplyr::filter(CITYNAME %in% city_vals())
                  })
 
 
@@ -193,7 +209,7 @@ filter_page <- function(id, metrics) {
                    #list of selected cities
                    get_intersecting_ids(city_bounds(),subbasin_shps)
                    }else{
-                     row.names(metrics)
+                     row.names(watershed.data)
                    }
                  })
 
@@ -209,14 +225,17 @@ filter_page <- function(id, metrics) {
                  # })
 
                 filtered_ids <- reactive({
-                  user_ids <- metrics %>%
+                  user_ids <- watershed.data %>%
                     dplyr::filter(WQBE_basin %in% wria_vals()) %>%
-                    filter(Contains_Swimming_Beaches %in% swimming()) %>%
-                    filter(Is_Headwater_Basin %in% headwaters()) %>%
-                    filter(Presence_of_Shellfish %in% shellfish()) %>%
-                    filter(Drains_to_P_Sensitive_Lake %in% P_lakes()) %>%
+                    dplyr:: filter(Contains_Swimming_Beaches %in% swimming()) %>%
+                    dplyr:: filter(Is_Headwater_Basin %in% headwaters()) %>%
+                    dplyr::filter(Presence_of_Shellfish %in% shellfish()) %>%
+                    dplyr::filter(Drains_to_P_Sensitive_Lake %in% P_lakes()) %>%
                     rownames()
-
+                  # if(is.null(user_ids)){
+                  #   c("1000010", "1000020", "1000030", "1000040", "1000050", "1000060")
+                  #
+                  # }
                   if(length(user_ids >0)){
                     return(user_ids[user_ids %in% spatial_filter_ids()])
                   }else{
@@ -239,7 +258,7 @@ filter_page <- function(id, metrics) {
 
                  data.df <- reactive({
 
-                   metrics[row.names(metrics) %in% filtered_ids(), ]
+                   watershed.data[row.names(watershed.data) %in% filtered_ids(), ]
                  })
 
 
@@ -267,29 +286,26 @@ filter_page <- function(id, metrics) {
                        )
                      )
                  })
-                 output$hot = renderDataTable(
-                   DT::datatable(
-                     display_table(),
-                     rownames = TRUE,
-                   #  style = "bootstrap5",
-                     options = list(dom = 'tp', scrollX = TRUE),
-                   #  extensions = 'Responsive'
-                   ) %>% DT::formatPercentage("Imperviousness", 0)
-                 )
+                 # output$hot = renderDataTable(
+                 #   DT(
+                 #     display_table(),
+                 #     rownames = TRUE,
+                 #   #  style = "bootstrap5",
+                 #     options = list(dom = 'tp', scrollX = TRUE),
+                 #   #  extensions = 'Responsive'
+                 #   ) %>% DT::formatPercentage("Imperviousness", 0)
+                 # )
                  #
-                 #   output$table_1 = renderDataTable(subbasin_metrics)
+                 #   output$table_1 = renderDataTable(subbasin_metrics())
                  #
                  # }
 
                  #count rows
-                 output$num_selected <-
-                   shiny::renderUI(
-                     shinydashboardPlus::descriptionBlock(
-                       text = "Subbasins Selected",
-                       header = nrow(data.df()),
+                 output$num_selected <- shiny::renderUI(
+                   card(.num=nrow(data.df()), .description =
+                    HTML("Subbasins <br> Selected")))
 
-                     )
-                   )
+
 
                  #   shinydashboard::renderValueBox(valueBox(
                  #   subtitle = 'Subbasins Selected',
@@ -332,8 +348,8 @@ filter_page <- function(id, metrics) {
                    })
 
                  shps_selected <- reactive({
-
-                   subbasin_shps %>% filter(SWSID %in% filtered_ids())
+                  #req(filtered_ids())
+                   subbasin_shps #%>% dplyr::filter(SWSID %in% filtered_ids())
                  })
 
 
@@ -449,7 +465,8 @@ ui <- fluidPage(
 )
 
 server <- function(input, output, session) {
-  filter_page('test',subbasin_metrics)
+  #rv <- reactiveValues(data = subbasin_data, ids = rownames(subbasin_data))
+  filter_page_server("test", subbasin_data)
 }
 
 shinyApp(ui, server)
