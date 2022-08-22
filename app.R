@@ -1,7 +1,5 @@
-library(data.table)
-require(shinyBS)
-require()
-load(here::here("data", "subbasin_data.rda"))
+
+
 
 ui <-
   shinydashboard::dashboardPage(
@@ -18,10 +16,10 @@ ui <-
     body =
       shinydashboard::dashboardBody(
         tabItems(
-          #tabItem("lp",  lpUI("main")),
+         tabItem("lp",  lpUI("main")),
           tabItem("filter_locations",filter_page_UI("main")),
-          tabItem("criteria",criteria_page_UI("main")),
-          tabItem("Debug",debugUI("main"))
+       tabItem("criteria",criteria_page_UI2("main"))
+         #tabItem("Debug",debugUI("main"))
         )
       ))
 
@@ -29,10 +27,10 @@ server <- function(input, output, session) {
 
   #reactive values to be passed to modules
   #rv <- reactiveValues(subbasin_data = subbasin_data, metrics = metrics) #, basin_ids = subbasin_metrics %>% rownames())
-  filter_page_server("main",subbasin_data)
   lpServer("main")
-  criteria_page_server("main")
-  debugServer("main",mtcars)
+  filtered_results<- filter_page_server("main",subbasin_data)
+  criteria_page_server2("main",filtered_results)
+  #debugServer("main",filtered_results)
 }
 
 shinyApp(ui, server)

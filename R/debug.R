@@ -1,17 +1,17 @@
 debugUI <- function(id) {
   ns <- NS(id)
   tagList(
-  dataTableOutput(ns('table'))
+  verbatimTextOutput(ns('table'))
   )
 }
 
-debugServer <- function(id,rv) {
+debugServer <- function(id,filtered) {
   moduleServer(
     id,
     function(input, output, session) {
 
 
-      output$table <- renderDataTable(rv$data)
+      output$table <- renderPrint(filtered())
 
     }
   )

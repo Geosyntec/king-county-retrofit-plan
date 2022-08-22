@@ -7,12 +7,12 @@ require(shinydashboardPlus)
 require(DT)
 require(dplyr)
 require(spdplyr)
-
-load(here::here("data", "subbasin_shps.rda"))
-load(here::here("data", "city_names.rda"))
-load(here::here("data", "city_lookup.rda"))
-load(here::here("data", "cities_shp.rda"))
-source(here::here("R", "fct_helpers.R"))
+# load(here::here("data", "subbasin_data.rda"))
+# load(here::here("data", "subbasin_shps.rda"))
+# load(here::here("data", "city_names.rda"))
+# load(here::here("data", "city_lookup.rda"))
+# load(here::here("data", "cities_shp.rda"))
+# source(here::here("R", "fct_helpers.R"))
 
 
 
@@ -116,7 +116,7 @@ filter_page_UI <- function(id) {
             ,
             (column(
               width = 7, shiny::actionButton(ns("reset"), label = "Reset Filters", icon = icon("undo"), width = "90%"),
-              shiny::actionButton(ns("reset"), label = "Save Subbasins", icon = icon("check"), width = "90%")
+              shiny::actionButton(ns("save"), label = "Save Subbasins", icon = icon("check"), width = "90%")
             )
 
             )
@@ -252,7 +252,7 @@ filter_page_server <- function(id, watershed.data) {
         return(user_ids)
       }
     })
-    observe(print(spatial_filter_ids()))
+    #observe(print(spatial_filter_ids()))
     # %>%
     #   bindEvent(c(
     #     wria_vals(),
@@ -362,9 +362,8 @@ filter_page_server <- function(id, watershed.data) {
 
     shps_selected <- reactive({
        req(filtered_ids())
-      subbasin_shps  %>% dplyr::filter(SWSID %in% filtered_ids())
+      subbasin_shps[which(subbasin_shps$SWSID %in% filtered_ids()),]
     })
-
 
     # map observers  -------------------------------------------------------
     #
@@ -431,7 +430,7 @@ filter_page_server <- function(id, watershed.data) {
     observeEvent(input$map_shape_click, { # update the location selectInput on map clicks
       p <- input$map_shape_click
       pt.df <- data.frame(x = p["lat"], y = p["lng"])
-      print(pt.df)
+      #print(pt.df)
     }) # %>% bindEvent(input$map)
     # debug -------------------------------------------------------------------
 
@@ -447,16 +446,15 @@ filter_page_server <- function(id, watershed.data) {
       filtered_ids(),
       city_vals() %>% unlist(),
       "merge:",
-      length(city_vals())
+      length(city_vals())))
 
       # spatial_filter_ids() %>% unlist(),
       # "cities:"
       #  city_bounds() %>% unlist()
       # "rows selected",
       # table_info()
-    ))
-
-
+    df.toreturn <- reactive(data.df()) %>% bindEvent(input$save) #module returns filtered ids
+    return(df.toreturn)
     # End mod server ----------------------------------------------------------
   })
 }
