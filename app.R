@@ -2,7 +2,7 @@ library(data.table)
 require(shinyBS)
 load(here::here("data", "subbasin_data.rda"))
 ui <-
-  shinydasload(here::here("data", "subbasin_shps.rda"))hboard::dashboardPage(
+  shinydashboard::dashboardPage(
     header = shinydashboard::dashboardHeader(),
     sidebar = shinydashboardPlus::dashboardSidebar(
       sidebarMenu(id = 'tabs',
@@ -16,7 +16,7 @@ ui <-
     body =
       shinydashboard::dashboardBody(
         tabItems(
-          #tabItem("lp",  lpUI("main")),
+          tabItem("lp",  lpUI("main")),
           tabItem("filter_locations",filter_page_UI("main")),
           tabItem("criteria",criteria_page_UI("main")),
           tabItem("Debug",debugUI("main"))
