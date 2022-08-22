@@ -16,6 +16,7 @@ ui <-
     body =
       shinydashboard::dashboardBody(
         tabItems(
+
          tabItem("lp",  lpUI("main")),
           tabItem("filter_locations",filter_page_UI("main")),
        tabItem("criteria",criteria_page_UI2("main"))
