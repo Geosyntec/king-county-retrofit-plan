@@ -1,8 +1,10 @@
 library(data.table)
 require(shinyBS)
+require()
 load(here::here("data", "subbasin_data.rda"))
+
 ui <-
-  shinydasload(here::here("data", "subbasin_shps.rda"))hboard::dashboardPage(
+  shinydashboard::dashboardPage(
     header = shinydashboard::dashboardHeader(),
     sidebar = shinydashboardPlus::dashboardSidebar(
       sidebarMenu(id = 'tabs',
