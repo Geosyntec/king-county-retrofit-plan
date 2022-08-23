@@ -1,3 +1,4 @@
+library(shinydashboardPlus)
 
 
 
@@ -19,7 +20,7 @@ ui <-
 
          tabItem("lp",  lpUI("main")),
           tabItem("filter_locations",filter_page_UI("filter-main")),
-       tabItem("criteria",criteria_page_UI2("criteria-main"))
+          tabItem("criteria",criteria_page_UI2("criteria-main"))
          #tabItem("Debug",debugUI("main"))
         )
       ))
@@ -28,7 +29,12 @@ server <- function(input, output, session) {
 
   #reactive values to be passed to modules
   #rv <- reactiveValues(subbasin_data = subbasin_data, metrics = metrics) #, basin_ids = subbasin_metrics %>% rownames())
-  lpServer("main")
+  user_click <- lpServer("main")
+
+  observe(
+    updateTabItems(session,"tabs","filter_locations")
+  ) %>% bindEvent(user_click())
+
   filtered_results<- filter_page_server("filter-main",subbasin_data)
   criteria_page_server2("criteria-main",filtered_results)
   #debugServer("main",filtered_results)

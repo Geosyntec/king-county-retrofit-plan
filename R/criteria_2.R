@@ -1,4 +1,4 @@
-library(shinydashboard)
+library(shinydashboardPlus)
 
 criteria_page_UI2 <- function(id) {
   ns <- NS(id)
