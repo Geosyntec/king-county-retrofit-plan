@@ -19,9 +19,7 @@ promethee_2 <-  function(dataset=NULL,
 
   # dataset with criteria
 
-  if(is.null(dataset)){
 
-  }
 
   # qualitative parameters
 
@@ -82,7 +80,8 @@ promethee_2 <-  function(dataset=NULL,
     gaussP <- runif(c, 0, 0)
     }
 
-
+  #handle nas
+  dataset[which(is.na(dataset %>% colSums))]<-0
   res <- PROMETHEEOutrankingFlows(
     performanceTable = dataset %>% # dplyr::select(-watershed.name) %>%
       as.matrix(),

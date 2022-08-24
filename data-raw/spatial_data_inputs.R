@@ -23,10 +23,10 @@ subbasin_simplified <- ms_simplify(subbasin_shps, keep = 0.10,
                                 keep_shapes = FALSE) %>% st_set_crs(base_crs)
 
 #test loading time.
-system.time({
-  leaflet(subbasin_simplified) %>% addPolygons()
-})
-subbasin_shps<- subbasin_simplified
+# system.time({
+#   leaflet(subbasin_simplified) %>% addPolygons()
+# })
+subbasin_shps<- subbasin_simplified %>% select(c(SWSID, geometry))
 
 usethis::use_data(subbasin_shps,overwrite = TRUE)
 

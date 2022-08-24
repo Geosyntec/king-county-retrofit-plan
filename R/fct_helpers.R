@@ -1,4 +1,22 @@
 library(leaflet)
+
+card <- function(.num, .description) {
+  HTML(
+    paste0(
+    '
+<div class="card text-right "float-left";"style="width: 18rem;">
+  <div class="card-body">
+    <h1 class="card-title">',.num,'</h1>
+    <p class="card-text"><small>',.description,'</small> </p>
+
+  </div>
+</div>
+
+'
+  ))
+}
+
+
 #return watersheds that intersect a boundary
 get_intersecting_ids <- function(right,left,id_col="SWSID"){
   sf::sf_use_s2(FALSE)
@@ -8,6 +26,22 @@ get_intersecting_ids <- function(right,left,id_col="SWSID"){
    )
 }
 
+#' sig_figs
+#' mutates a dataframe to signficiant figures
+#'
+#' @param df dataframe
+#' @param n number of sigfigs
+#'
+#' @return
+#' @export
+#'
+#' @examples
+sig_figs <- function(df,n=2){
+  return(df %>%
+
+           mutate(across(where(is.numeric),signif,n))
+  )
+}
 
 
 
