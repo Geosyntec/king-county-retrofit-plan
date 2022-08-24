@@ -1,7 +1,3 @@
-library(shinydashboardPlus)
-
-
-
 ui <-
   shinydashboard::dashboardPage(
     header = shinydashboard::dashboardHeader(),
@@ -36,7 +32,7 @@ server <- function(input, output, session) {
   ) %>% bindEvent(user_click())
 
   filtered_results<- filter_page_server("filter-main",subbasin_data)
-  criteria_page_server2("criteria-main",filtered_results)
+criteria_page_server2("criteria-main",filtered_results)
   #debugServer("main",filtered_results)
 }
 

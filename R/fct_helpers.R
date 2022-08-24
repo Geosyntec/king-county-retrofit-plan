@@ -26,6 +26,22 @@ get_intersecting_ids <- function(right,left,id_col="SWSID"){
    )
 }
 
+#' sig_figs
+#' mutates a dataframe to signficiant figures
+#'
+#' @param df dataframe
+#' @param n number of sigfigs
+#'
+#' @return
+#' @export
+#'
+#' @examples
+sig_figs <- function(df,n=2){
+  return(df %>%
+
+           mutate(across(where(is.numeric),signif,n))
+  )
+}
 
 
 
