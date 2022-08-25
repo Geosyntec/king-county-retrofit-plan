@@ -16,6 +16,10 @@ card <- function(.num, .description) {
   ))
 }
 
+dev_pill <- function(message = "In development"){
+dashboardBadge(color="orange", message)
+  }
+
 
 #return watersheds that intersect a boundary
 get_intersecting_ids <- function(right,left,id_col="SWSID"){

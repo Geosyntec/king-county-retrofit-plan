@@ -208,9 +208,10 @@ filter_page_server <- function(id, watershed.data) {
     }))
 
     city_bounds <- reactive({
-
+      #cities_shp[cities_shp["CITYNAME"] %in% city_vals(), ]
+      cities_shp[cities_shp[,"CITYNAME",drop=TRUE]%in% city_vals(),] %>% st_set_crs(project_crs)
       # list of selected cities
-      cities_shp %>% dplyr::filter(CITYNAME %in% city_vals())
+      #cities_shp %>% dplyr::filter(CITYNAME %in% city_vals())
     })
 
 
@@ -224,32 +225,36 @@ filter_page_server <- function(id, watershed.data) {
     })
 
 
-    # add jursidction if selected
-    observe({
+    # # add jursidction if selected
+    # observe({
+    #
+    #
+    #   leafletProxy("map", data = city_bounds()) %>%
+    #     clearShapes() %>%
+    #   addPolygons()
+    #
+    # })
 
-
-      leafletProxy("map", data = city_bounds()) %>%
-        clearShapes() %>%
-      addPolygons()
-
-    })
-
-    filtered_ids <- reactive({
+    table_filtered_ids <- reactive({
       user_ids <- watershed.data %>%
         dplyr::filter(WQBE_basin %in% wria_vals()) %>%
         dplyr::filter(Contains_Swimming_Beaches %in% swimming()) %>%
         dplyr::filter(Is_Headwater_Basin %in% headwaters()) %>%
         dplyr::filter(Presence_of_Shellfish %in% shellfish()) %>%
         dplyr::filter(Drains_to_P_Sensitive_Lake %in% P_lakes()) %>%
-        rownames()
+        rownames()})
+
+
       # if(is.null(user_ids)){
       #   c("1000010", "1000020", "1000030", "1000040", "1000050", "1000060")
       #
       # }
-      if (length(user_ids > 0)) {
-        return(user_ids[user_ids %in% spatial_filter_ids()])
+    #this joins spatial and table filters
+    filtered_ids <- reactive({
+      if (length(table_filtered_ids() > 0)) {
+        return(table_filtered_ids()[table_filtered_ids() %in% spatial_filter_ids()])
       } else {
-        return(user_ids)
+        return(table_filtered_ids())
       }
     })
     #observe(print(spatial_filter_ids()))
@@ -338,67 +343,91 @@ filter_page_server <- function(id, watershed.data) {
 
 
 
-    output$map <- renderLeaflet({
 
 
 
-      # basins_selected = input$hot_rows_selected
-      leaflet() %>%
-        addProviderTiles("CartoDB.DarkMatter", group = "Dark") %>%
-        addProviderTiles("Esri.WorldGrayCanvas", group = "Grey") %>%
-        addProviderTiles("Esri.WorldImagery", group = "Satellite") %>%
-        addLayersControl(
-          position = "bottomright", options = layersControlOptions(collapsed = FALSE),
-          baseGroups = c("Grey", "Satellite", "Dark")
-        ) %>%
-        addPolygons(data = subbasin_shps, group = "selected_sheds") # %>%
-
-      #       setView(
-      #   lng = (-122.2),
-      #   lat = (47.6),
-      #   zoom = 7
-      # )
+     output$map <- renderLeaflet({
+       leaflet(subbasin_shps) %>%
+         addProviderTiles("CartoDB.DarkMatter", group = "Dark") %>%
+         addProviderTiles("Esri.WorldGrayCanvas", group = "Grey") %>%
+         addProviderTiles("Esri.WorldImagery", group = "Satellite") %>%
+         addLayersControl(
+           position = "bottomright", options = layersControlOptions(collapsed = FALSE),
+           baseGroups = c("Grey", "Satellite", "Dark"),
+           overlayGroups = c("City Limits","base")
+         ) %>%
+         addPolygons(data = subbasin_shps,weight = 1, opacity = 0.6,
+                     color = "#9E9E9E",fillColor = "#d2d6de",
+                     group = "base", options = list(zIndex = 100)) %>%
+         addPolygons(data=cities_shp, group = "City Limits") %>%
+         hideGroup("City Limits")
     })
 
-    shps_selected <- reactive({
-       req(filtered_ids())
+    shps_filtered <- reactive({
+      #req(filtered_ids())
       subbasin_shps[which(subbasin_shps$SWSID %in% filtered_ids()),]
     })
 
     # map observers  -------------------------------------------------------
     #
-
-    observeEvent(shps_selected(), {
+#proxy1
+    observeEvent(display_table(), {
       leafletProxy("map") %>%
         clearGroup("selected_sheds") %>%
-        addPolygons(
-          data = shps_selected(), group = "selected_sheds",
-          opacity = 0.6,
-          color = "green",
-          weight = 0.5,
-          # dashArray = 1,
-          fillOpacity = 0.1,
-          fillColor = "green"
-        )
+        #clearGroup("base") %>%
+        # addPolygons(data = subbasin_shps, fillOpacity = 0.4,weight = 1,color = "#6c757d",
+        #             fillColor = "grey",group = "base",  options = list(zIndex = 100)) %>%
+        addPolygons(data = shps_filtered(),weight=2.5,color="#28a745",
+                    fillColor = "#01ff70",
+                    group="selected_sheds",options = list(zIndex = 101)) #%>%
     })
 
-    # add city if selected
     observe({
-      if (length(city_vals()) != 0) {
-        leafletProxy("map") %>%
-          clearGroup("City") %>%
-          addPolygons(
-            data = city_bounds(), group = "City",
-            color = "#927EAB",
-            opacity = 1,
-            weight = 3,
-            fillOpacity = 0.25
-          )
-      } else {
-        leafletProxy("map") %>%
-          clearGroup("City")
-      }
-    }) # %>% bindEvent(input$jurisdictionpicker)
+
+      leafletProxy("map") %>%
+        clearGroup("city_bounds") %>%
+        addPolygons(data = city_bounds(), dashArray = c("2, 2"), fillOpacity = 0.1, weight = 1.5, color = "black", group = "city_bounds",   options = list(zIndex = 200))
+
+    }) %>% bindEvent(city_bounds(),ignoreInit = TRUE,ignoreNULL = TRUE)
+
+    #proxy2
+    # observeEvent(display_table(), {
+    #   if(length(city_vals()) != 0) {
+    #     leafletProxy("map") %>%
+    #       showGroup("selected_sheds") %>%
+    #       showGroup("base") %>%
+    #     clearGroup("City") %>%
+    #       addPolygons(
+    #         data = city_bounds(), group = "City",
+    #         color = "#927EAB",
+    #         opacity = 1,
+    #         weight = 3,
+    #         fillOpacity = 0.25
+    #       )
+    #   } else {
+    #     leafletProxy("map") %>%
+    #     clearGroup("City")
+    #
+    # }})
+
+  #proxy 3
+    # add city if selected
+    # observe({
+    #   if (length(city_vals()) != 0) {
+    #     leafletProxy("map") %>%
+    #       clearGroup("City") %>%
+    #       addPolygons(
+    #         data = city_bounds(), group = "City",
+    #         color = "#927EAB",
+    #         opacity = 1,
+    #         weight = 3,
+    #         fillOpacity = 0.25
+    #       )
+    #   } else {
+    #     leafletProxy("map") %>%
+    #       clearGroup("City")
+    #   }
+    # }) %>% bindEvent(input$jurisdictionpicker)
 
 
     # observe({
@@ -410,7 +439,7 @@ filter_page_server <- function(id, watershed.data) {
 
     # observe table select
     # observe({
-    #   leafletProxy("map", data = shps_selected()) %>%
+    #   leafletProxy("map", data = shps_filtered()) %>%
     #     clearGroup('subbasins') %>%
     #     #add polygons
     #
@@ -426,12 +455,12 @@ filter_page_server <- function(id, watershed.data) {
     # })
 
 
-    # observe map click
-    observeEvent(input$map_shape_click, { # update the location selectInput on map clicks
-      p <- input$map_shape_click
-      pt.df <- data.frame(x = p["lat"], y = p["lng"])
-      #print(pt.df)
-    }) # %>% bindEvent(input$map)
+    # # observe map click
+    # observeEvent(input$map_shape_click, { # update the location selectInput on map clicks
+    #   p <- input$map_shape_click
+    #   pt.df <- data.frame(x = p["lat"], y = p["lng"])
+    #   #print(pt.df)
+    # }) # %>% bindEvent(input$map)
     # debug -------------------------------------------------------------------
 
 

@@ -10,7 +10,8 @@ promethee_2 <-  function(dataset=NULL,
                          IndT = NULL,
                          PreT = NULL,
                          PreF = NULL,
-                         gaussP = NULL
+                         gaussP = NULL,
+                         limit = NULL
 )
 
 {
@@ -93,9 +94,12 @@ promethee_2 <-  function(dataset=NULL,
   out_flows <- data.frame(row.names = basins,
     phi_plus = res[["outrankingFlowsPos"]],
     phi_minus = res[["outrankingFlowsNeg"]]
-  ) %>% round(2)
+  ) %>% round(2) %>% mutate(score = (phi_plus - phi_minus) %>%
+                         round(digits = 2)) %>% mutate(score_rank = min_rank(-score))
 
-
+  if(!is.null(limit)){
+    out_flows <- slice_min(score_rank,limit)
+  }
 
   # get partial ranking
 
@@ -155,15 +159,16 @@ promethee_2 <-  function(dataset=NULL,
 
   # Get the scored table with pos and neg flows -----------------------------
 
-  pf2 <- out_flows %>%
-    mutate(score = (phi_plus - phi_minus) %>%
-             round(digits = 2)) #%>%
+  pf2 <- out_flows
+  #%>%
+  #   mutate(score = (phi_plus - phi_minus) %>%
+  #            round(digits = 2)) #%>%
     #rownames_to_column(var = name_col)
 
   # add rankings -----------------------------
 
   # make a ranking dataframe
-  pf2$rank <- min_rank(-pf2$score)
+  #pf2$rank <- min_rank(-pf2$score)
 
 
 

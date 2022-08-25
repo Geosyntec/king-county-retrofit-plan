@@ -3,7 +3,11 @@ library(readr)
 
 metrics <- read_csv(here("data-raw","metrics_config.csv"),
                            col_types = cols(Goal = col_character(),
-                                            Subgoal = col_character()))
+                                            Subgoal = col_character())) %>%
+  mutate(orientation_protect = case_when(orientation_protect == "Minimize" ~ "min",
+                                         orientation_protect == "Maximize" ~ "max")) %>%
+  mutate(orientation_restore = case_when(orientation_restore == "Minimize" ~ "min",
+                                         orientation_restore == "Maximize" ~ "max"))
 
 
 #metrics <- set_names(metrics,goal_names)
