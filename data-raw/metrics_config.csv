@@ -1,29 +1,29 @@
-﻿Name,Goal,Goal_Description,Subgoal,Subgoal_Description,Metric_no,orientation_protect,orientation_restore,Pretty_name
-WQBE_Total_Nitrogen_Load,1,Improve water quality outcomes,1.1, Prioritize areas based on pollutant concentrations,1,Minimize,Maximize,Water quality assessment - Total Nitrogen
-WQBE_Total_Suspended_Solids_Load,1,Improve water quality outcomes,1.1, Prioritize areas based on pollutant concentrations,2,Minimize,Maximize,Water quality assessment - Total Suspended Solids
-WQBE_Total_PAH_Load,1,Improve water quality outcomes,1.1, Prioritize areas based on pollutant concentrations,3,Minimize,Maximize,Water quality assessment - Total PAHs
-WQBE_Annual_Runoff,1,Improve water quality outcomes,1.1, Prioritize areas based on pollutant concentrations,4,Minimize,Maximize,Annual runoff volume
-Imperviousness,1,Improve water quality outcomes,1.1, Prioritize areas based on pollutant concentrations,5,Minimize,Maximize,Imperviousness
-Level_of_Stormwater_Management,1,Improve water quality outcomes,1.2, Improve infrastructure in areas with inadequate stormwater management,6,Minimize,Minimize,Level of stormwater management
-Age_of_Development,1,Improve water quality outcomes,1.2, Improve infrastructure in areas with inadequate stormwater management,8,Minimize,Maximize,Age of development
-Urban_Heat_Island,2,Increase resilience to climate change impacts,2.1, Target areas most vulnerable to and at risk for climate change impacts,8,Minimize,Maximize,Age of development
-Precipitation_Change,2,Increase resilience to climate change impacts,2.1, Target areas most vulnerable to and at risk for climate change impacts,10,Minimize,Maximize,Change in Precipitation
-BIBI,3,Preserve and restore wildlife habitat,3.1, Improve B-IBI in prioritized areas,11,Maximize,Minimize,Benthic - Index of Biotic Integrity
-Flow_Duration_Index,3,Preserve and restore wildlife habitat,3.1, Improve B-IBI in prioritized areas,12,Minimize,Maximize,Flow Control Index
-Critical_Habitat_Streams,3,Preserve and restore wildlife habitat,3.2, Preserve and restore wildlife habitat,13a,Maximize,Maximize,Regional Critical Habitat
-Protected_Area,3,Preserve and restore wildlife habitat,3.2, Preserve and restore wildlife habitat,13b,Maximize,Maximize,Protected Area managed for biodiversity
-Barriers_to_Fish_Passage,3,Preserve and restore wildlife habitat,3.2, Preserve and restore wildlife habitat,14,Minimize,Maximize,Fish Passage Sites
-Swimming_Beach_Area,3,Preserve and restore wildlife habitat,3.3, Protect and restore areas important for prioritized endpoints of concern,15,Maximize,Maximize,Swimming Beach Areas
-Presence_of_Shellfish,3,Preserve and restore wildlife habitat,3.3, Protect and restore areas important for prioritized endpoints of concern,16,Maximize,Maximize,Shellfish Harvesting Areas
-Drains_to_P_Sensitive_Lake,3,Preserve and restore wildlife habitat,3.3, Protect and restore areas important for prioritized endpoints of concern,17,Maximize,Maximize,Areas Draining to Phosphorus-Sensitive Lakes
-Spawner_Mortality,3,Preserve and restore wildlife habitat,3.4, Reduce salmon pre-spawning mortality (PSM),18a,Minimize,Maximize,Predicted mean annual spawner mortality
-Presence_of_Coho_Bearing_Streams,3,Preserve and restore wildlife habitat,3.4, Reduce salmon pre-spawning mortality (PSM),18b,Maximize,Maximize,Presence of Coho Bearing Streams
-Traffic_Volume,3,Preserve and restore wildlife habitat,3.4, Reduce salmon pre-spawning mortality (PSM),19,Minimize,Maximize,Average annual daily traffic volume (AADT)
-Urban_Growth_Areas,3,Preserve and restore wildlife habitat,3.5, Preserve last remaining best lands in King County,20,Minimize,Maximize,Urban growth areas (UGA)
-LCI_Opportunity_Areas,4,Implement Equity and Social Justice,4.1, Prioritize areas of overlapping equity needs as identified by other KC programs,21,Maximize,Maximize,Opportunity Areas from KC LCI
-Opportunity_Index_Score,4,Implement Equity and Social Justice,4.1, Prioritize areas of overlapping equity needs as identified by other KC programs,22,Maximize,Maximize,ESJ Opportunity Index
-Equity_Score,4,Implement Equity and Social Justice,4.1, Prioritize areas of overlapping equity needs as identified by other KC programs,23,Maximize,Maximize,Equity Score
-Drainage_Complaints,4,Implement Equity and Social Justice,4.2, Address infrastructure gaps in underserved populations,25,Minimize,Maximize,History of drainage complaints
-Sidewalk_Density,4,Implement Equity and Social Justice,4.3," Improve access to safe, high-quality roadway infrastructure",26,Minimize,Minimize,Sidewalk density
-Pavement_Condition_Index,4,Implement Equity and Social Justice,4.3," Improve access to safe, high-quality roadway infrastructure",27,Minimize,Minimize,Pavement Condition Index (PCI)
-Crash_Density,4,Implement Equity and Social Justice,4.3," Improve access to safe, high-quality roadway infrastructure",28,Maximize,Maximize,Roadway safety
+﻿Name,Goal,Subgoal,Goal_Description,Subgoal_Description,Metric_no,orientation_protect,orientation_restore,Pretty_name,Weight,Indifference_Threshold_Percentage
+WQBE_Total_Nitrogen_Load,1,1.1,Improve water quality outcomes, Prioritize areas based on pollutant concentrations,1,Minimize,Maximize,Water quality assessment - Total Nitrogen,0,0.1
+WQBE_Total_Suspended_Solids_Load,1,1.1,Improve water quality outcomes, Prioritize areas based on pollutant concentrations,2,Minimize,Maximize,Water quality assessment - Total Suspended Solids,0,0.1
+WQBE_Total_PAH_Load,1,1.1,Improve water quality outcomes, Prioritize areas based on pollutant concentrations,3,Minimize,Maximize,Water quality assessment - Total PAHs,0,0.1
+WQBE_Annual_Runoff,1,1.1,Improve water quality outcomes, Prioritize areas based on pollutant concentrations,4,Minimize,Maximize,Annual runoff volume,0,0.1
+Imperviousness,1,1.1,Improve water quality outcomes, Prioritize areas based on pollutant concentrations,5,Minimize,Maximize,Imperviousness,0,0.1
+Level_of_Stormwater_Management,1,1.2,Improve water quality outcomes, Improve infrastructure in areas with inadequate stormwater management,6,Minimize,Minimize,Level of stormwater management,0,0.1
+Age_of_Development,1,1.2,Improve water quality outcomes, Improve infrastructure in areas with inadequate stormwater management,8,Minimize,Maximize,Age of development,0,0.1
+Urban_Heat_Island,2,2.1,Increase resilience to climate change impacts, Target areas most vulnerable to and at risk for climate change impacts,8,Minimize,Maximize,Age of development,0,0.1
+Precipitation_Change,2,2.1,Increase resilience to climate change impacts, Target areas most vulnerable to and at risk for climate change impacts,10,Minimize,Maximize,Change in Precipitation,0,0.1
+BIBI,3,3.1,Preserve and restore wildlife habitat, Improve B-IBI in prioritized areas,11,Maximize,Minimize,Benthic - Index of Biotic Integrity,0,0.1
+Flow_Duration_Index,3,3.1,Preserve and restore wildlife habitat, Improve B-IBI in prioritized areas,12,Minimize,Maximize,Flow Control Index,0,0.1
+Critical_Habitat_Streams,3,3.2,Preserve and restore wildlife habitat, Preserve and restore wildlife habitat,13a,Maximize,Maximize,Regional Critical Habitat,0,0.1
+Protected_Area,3,3.2,Preserve and restore wildlife habitat, Preserve and restore wildlife habitat,13b,Maximize,Maximize,Protected Area managed for biodiversity,0,0.1
+Barriers_to_Fish_Passage,3,3.2,Preserve and restore wildlife habitat, Preserve and restore wildlife habitat,14,Minimize,Maximize,Fish Passage Sites,0,0.1
+Swimming_Beach_Area,3,3.3,Preserve and restore wildlife habitat, Protect and restore areas important for prioritized endpoints of concern,15,Maximize,Maximize,Swimming Beach Areas,0,0.1
+Presence_of_Shellfish,3,3.3,Preserve and restore wildlife habitat, Protect and restore areas important for prioritized endpoints of concern,16,Maximize,Maximize,Shellfish Harvesting Areas,0,0.1
+Drains_to_P_Sensitive_Lake,3,3.3,Preserve and restore wildlife habitat, Protect and restore areas important for prioritized endpoints of concern,17,Maximize,Maximize,Areas Draining to Phosphorus-Sensitive Lakes,0,0.1
+Spawner_Mortality,3,3.4,Preserve and restore wildlife habitat, Reduce salmon pre-spawning mortality (PSM),18a,Minimize,Maximize,Predicted mean annual spawner mortality,0,0.1
+Presence_of_Coho_Bearing_Streams,3,3.4,Preserve and restore wildlife habitat, Reduce salmon pre-spawning mortality (PSM),18b,Maximize,Maximize,Presence of Coho Bearing Streams,0,0.1
+Traffic_Volume,3,3.4,Preserve and restore wildlife habitat, Reduce salmon pre-spawning mortality (PSM),19,Minimize,Maximize,Average annual daily traffic volume (AADT),0,0.1
+Urban_Growth_Areas,3,3.5,Preserve and restore wildlife habitat, Preserve last remaining best lands in King County,20,Minimize,Maximize,Urban growth areas (UGA),0,0.1
+LCI_Opportunity_Areas,4,4.1,Implement Equity and Social Justice, Prioritize areas of overlapping equity needs as identified by other KC programs,21,Maximize,Maximize,Opportunity Areas from KC LCI,0,0.1
+Opportunity_Index_Score,4,4.1,Implement Equity and Social Justice, Prioritize areas of overlapping equity needs as identified by other KC programs,22,Maximize,Maximize,ESJ Opportunity Index,0,0.1
+Equity_Score,4,4.1,Implement Equity and Social Justice, Prioritize areas of overlapping equity needs as identified by other KC programs,23,Maximize,Maximize,Equity Score,0,0.1
+Drainage_Complaints,4,4.2,Implement Equity and Social Justice, Address infrastructure gaps in underserved populations,25,Minimize,Maximize,History of drainage complaints,0,0.1
+Sidewalk_Density,4,4.3,Implement Equity and Social Justice," Improve access to safe, high-quality roadway infrastructure",26,Minimize,Minimize,Sidewalk density,0,0.1
+Pavement_Condition_Index,4,4.3,Implement Equity and Social Justice," Improve access to safe, high-quality roadway infrastructure",27,Minimize,Minimize,Pavement Condition Index (PCI),0,0.1
+Crash_Density,4,4.3,Implement Equity and Social Justice," Improve access to safe, high-quality roadway infrastructure",28,Maximize,Maximize,Roadway safety,0,0.1
