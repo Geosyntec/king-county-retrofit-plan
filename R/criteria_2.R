@@ -172,16 +172,8 @@ criteria_page_server2 <- function(id, filtered) {
       # get column names and match to metrics dictionary
       all_metrics <- reactive({
         metrics %>%
-          dplyr::filter(Name %in% criteria_names()) %>% # %>% add_column(Include = TRUE,.before=1) %>%
-          relocate(Subgoal, .before = 3) %>%
-          add_column(
-            Weight = 0,
-            Indt = 0,
-            PreT = 0,
-            PreF = 0,
-            gaussP = 0
-          )
-      })
+          dplyr::filter(Name %in% criteria_names())}) #%>% # %>% add_column(Include = TRUE,.before=1) %>%
+
       goal_metrics <- reactive(all_metrics() %>% select(c(Goal, Goal_Description, Weight)) %>% unique())
       sub_goal_metrics <- reactive(all_metrics() %>% select(c(Goal, Goal_Description, Subgoal, Subgoal_Description, Weight)) %>% unique())
 
@@ -296,7 +288,7 @@ criteria_page_server2 <- function(id, filtered) {
           user_weights.df())#user_weights())
       #%>% bindEvent(user_weights())
 output$table3 <- renderDT(user_edits_all_metrics())
-output$table4 <- renderDT(min_max.df())
+output$table4 <- renderDT(rainbow_values() %>% as.data.frame())
       DF <- reactive(goal_metrics())
       #       if(input$goal_tiers_select =="Subgoals"){
       #         user.tables$subgoals <- user.edits
@@ -365,14 +357,21 @@ output$table4 <- renderDT(min_max.df())
                              #user_edits_all_metrics() %>% select(c("Metric_no", "orientation_protect")))
       })
 
-      min_max <- reactive({min_max.df()[["min_max"]]})
+
       #observe(print(min_max() %>% ))
       # Get mcda results --------------------------------------------------------
-      mcda_results <- reactive(
+      mcda_results <- reactive({
+        min_max <- reactive({min_max.df()[["min_max"]]})
+        weighting <- user_edits_all_metrics()
+          IndT <- user_edits_all_metrics()[["Weight"]]*user_edits_all_metrics()[["Indifference_Threshold_Percentage"]]
+          PreT = IndT
+          PreF = rep("V-shape", cleaned_criteria() %>% ncol())
+      return(
+
         promethee_2(
           dataset = cleaned_criteria(), weighting = user_edits_all_metrics()[["Weight"]], minmax = min_max()#, limit = results_to_return()
-        )
-      ) %>% bindEvent(input$accept_weights,ignoreInit = TRUE)
+        ))
+      }) %>% bindEvent(input$accept_weights,ignoreInit = TRUE)
 
       results_to_return <- reactive(as.numeric(input$n))
 
@@ -384,11 +383,37 @@ output$table4 <- renderDT(min_max.df())
       #   inline = FALSE
 
 
+      P1 <- reactive(mcda_results()[["PROMETHEE1"]])
 
-      pf2_outflows <- reactive(mcda_results()[1] %>% as.data.frame() %>%
-                               mutate(score = scales::rescale(score,to=c(-10,10))) %>%
-                               #  mutate(subbasin_rank = rank) %>%
-                               slice_max(score,n = results_to_return()) %>% sig_figs())
+      unet_flows <- reactive(
+        mcda_results()[["UnicriterionNetFlows"]]
+        )
+
+      observe(print(unet_flows()))
+      observe(print(user_edits_all_metrics()[["Weight"]]))
+      rainbow_values <- reactive(unet_flows() * user_edits_all_metrics()[["Weight"]])
+
+      pf2_outflows <- reactive({
+        data.frame(
+        row.names = cleaned_criteria() %>% row.names(),
+        phi_plus = P1()[,1],
+        phi_minus = P1()[,2]
+        ) %>%
+           round(2) %>%
+           mutate(score = (phi_plus - phi_minus) %>%
+             round(digits = 2)) %>%
+           mutate(score_rank = min_rank(-score))%>%
+          slice_max(score,n = results_to_return()) %>% sig_figs()
+      })
+
+      # pf2_outflows <- reactive(
+      #   P1() %>% as.data.frame() %>%
+      #
+      #
+      #                          )# %>%
+      #                          #mutate(score = scales::rescale(score,to=c(-10,10))) %>%
+      #                          #  mutate(subbasin_rank = rank) %>%
+      #                          #slice_max(score,n = results_to_return()) %>% sig_figs())
 
 
 
@@ -479,7 +504,7 @@ output$table4 <- renderDT(min_max.df())
                           position = "bottomleft",
                           labFormat = labelFormat(transform = function(x) sort(x, decreasing = TRUE)))
 
-      }) %>% bindEvent(input$accept_weights, ignoreInit = TRUE)
+      }) #%>% bindEvent(input$accept_weights, ignoreInit = TRUE)
 
       # leafletProxy("map") %>%
       #   clearGroup("selected_sheds") %>%
