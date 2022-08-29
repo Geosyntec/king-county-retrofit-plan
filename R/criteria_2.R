@@ -345,7 +345,7 @@ output$table4 <- renderDT(rainbow_values() %>% as.data.frame())
       output$card2 <- renderUI(card(num_criteria(), "Criteria Selected"))
       output$table <- renderDataTable(filtered() %>% head())
 
-      observe(print(input$orientation_select == "Protection"))
+
 # Get user edited weights -------------------------------------------------
       min_max.df <- reactive({
         if(input$orientation_select == "Protection"){
@@ -389,8 +389,8 @@ output$table4 <- renderDT(rainbow_values() %>% as.data.frame())
         mcda_results()[["UnicriterionNetFlows"]]
         )
 
-      observe(print(unet_flows()))
-      observe(print(user_edits_all_metrics()[["Weight"]]))
+
+
       rainbow_values <- reactive(unet_flows() * user_edits_all_metrics()[["Weight"]])
 
       pf2_outflows <- reactive({
