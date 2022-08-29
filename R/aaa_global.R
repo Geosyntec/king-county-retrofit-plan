@@ -6,6 +6,8 @@ require(sf)
 require(dplyr)
 require(spdplyr)
 require(DT)
+require(PROMETHEE)
+require(tibble)
 
 
 load(here::here("data", "subbasin_data.rda"))
