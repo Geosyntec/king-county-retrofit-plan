@@ -124,17 +124,25 @@ uiOutput(ns("weight_sum")),
           # dataTableOutput(ns('metrics_out'))
           shinycssloaders::withSpinner(DTOutput(ns('ranked_list'))))
         ))),
-      tabPanel("debug info",
+      tabPanel("Input Data",
+               fluidRow(
+                 column(12,
         DTOutput(ns("table2")),
         verbatimTextOutput(ns("criteria_debug")),
         "user edits:",
         DTOutput(ns("table3"))
-
+))
       ),
       tabPanel("min_max",
                strong("Table 4"),
                DTOutput(ns("table4"))
-               )
+               ),
+tabPanel("goal chart",
+         strong("Goal Chart"),
+
+
+         echarts4rOutput(ns("goal_chart"),height = "1000px")
+)
 
       ),
 
@@ -159,6 +167,7 @@ criteria_page_server2 <- function(id, filtered) {
       # count number of basins
       cleaned_criteria <- reactive(filtered() %>% select_if(is.numeric)) # %>% na.omit())
       criteria_names <- reactive(cleaned_criteria() %>% colnames())
+      alternatives <- reactive(cleaned_criteria() %>% rownames())
       row_count <- reactive(nrow(filtered()))
 
       output$count_items <- renderUI({card(.num = row_count(), .description = "Total Subbasins")})
@@ -284,11 +293,11 @@ criteria_page_server2 <- function(id, filtered) {
 
 
       output$table2 <-#renderDataTable(
-        DT::renderDT(
-          user_weights.df())#user_weights())
+        DT::renderDT(cleaned_criteria(),  options = list(scrollX = TRUE)
+          )#user_weights())
       #%>% bindEvent(user_weights())
 output$table3 <- renderDT(user_edits_all_metrics())
-output$table4 <- renderDT(rainbow_values() %>% as.data.frame())
+output$table4 <- renderDT(rainbow_values() %>% as.data.frame(),options = list(scrollX = TRUE))
       DF <- reactive(goal_metrics())
       #       if(input$goal_tiers_select =="Subgoals"){
       #         user.tables$subgoals <- user.edits
@@ -384,14 +393,81 @@ output$table4 <- renderDT(rainbow_values() %>% as.data.frame())
 
 
       P1 <- reactive(mcda_results()[["PROMETHEE1"]])
+      P2 <- reactive(mcda_results()[["PROMETHEE2"]])
+      unet_flows <- reactive(   (mcda_results()[["UnicriterionNetFlows"]]))
 
-      unet_flows <- reactive(
-        mcda_results()[["UnicriterionNetFlows"]]
-        )
+      scores <- reactive(data.frame(score = P2()))
+
+      rainbow_values <- reactive({
+        (unet_flows()*  user_edits_all_metrics()[["Weight"]]) %>% as.data.frame() %>%
+          `colnames<-`(criteria_names()) %>%
+          add_column(SWSID = alternatives()) %>%
+          cbind(scores() ) %>%
+          slice_max(score,n = results_to_return()) %>%
+           pivot_longer(cols = -c(SWSID,score),names_to = "Name") #%>%
+         # merge(user_edits_all_metrics()) #%>%
+          # mutate(phi_group = ifelse(value>=0,"pos","neg"))
+      })
 
 
 
-      rainbow_values <- reactive(unet_flows() * user_edits_all_metrics()[["Weight"]])
+
+
+          rainbow.df <- reactive(rainbow_values() %>%
+                                   #pivot_longer(cols = -c(SWSID#, score
+                                    #                      ), names_to = "Name") %>%
+                                   mutate(pos = ifelse(value >= 0, value, 0)) %>%
+                                   mutate(neg = ifelse(value < 0, value, 0)) %>%
+                                   left_join(metrics))
+
+
+
+          rainbow.goals <- reactive(rainbow.df() %>%
+                                      group_by(Goal,SWSID) %>%
+                                      arrange(score) %>%
+                                      dplyr::summarise(pos = sum(pos),neg=sum(neg),total = sum(value)) %>%
+                                      mutate(Goal = paste("Goal",Goal)))
+
+          # top.pts <- reactive(rainbow.goals() %>% group_by(SWSID) %>% summarise(val = sum(total)) %>%
+          #                       select(SWSID = SWSID, yAxis = val, score = val))
+          #
+          #
+          #
+          # merged.df <- reactive(rainbow.goals() %>%
+          #                         left_join(top.pts()
+                                 # )
+                                #%>% arrange(score %>% desc()))
+
+          # rainbow.subgoals <- reactive(rainbow.df() %>%
+          #                                group_by(Subgoal,SWSID, Goal) %>%
+          #                                dplyr::summarise(pos = sum(pos),neg=sum(neg),total = sum(value)))
+
+
+          output$goal_chart <- renderEcharts4r({
+            rainbow_values() %>% group_by(SWSID)
+            #rainbow.goals()  %>%  #arrange(total) %>%
+              e_charts() %>%# ,name = "subbasin")  %>%
+              #e_bar(total,stack = "total") %>%
+              e_bar(total,stack = "pos") %>%
+              echarts4r::e_flip_coords() %>%
+              #  e_bar()
+              #e_bar(neg,stack = "neg") %>%
+              #  e_bar(pos,stack = "pos")  %>%
+              # e_bar(neg,stack = "neg") %>%
+              e_y_axis(inverse = TRUE) %>%
+              e_labels(position  ='inside',fontSize = 9,formatter = '{a} ') %>%
+              e_tooltip() |> e_toolbox_feature(feature = "dataView")
+          })
+
+      # rainbow_goals <- reactive(
+      #   rainbow_values() %>%
+      #     arrange(score) %>%
+      #   group_by(Goal,SWSID) %>%
+      #   dplyr::summarise(pos = sum(pos),neg=sum(neg),total = sum(value)) %>%
+      #   mutate(Goal = paste("Goal",Goal)))
+
+
+
 
       pf2_outflows <- reactive({
         data.frame(

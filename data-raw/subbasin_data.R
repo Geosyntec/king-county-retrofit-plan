@@ -7,6 +7,6 @@ subbasin_data <- read_excel(
               "Presence_of_Coho_Bearing_Streams",
               "Is_Headwater_Basin",
               "Contains_Swimming_Beaches"
-              ),as.logical) %>% column_to_rownames("SWSID")
+              ),as.logical) %>% column_to_rownames("SWSID") %>% select(-DSID)
 
 usethis::use_data(subbasin_data,overwrite = TRUE)
