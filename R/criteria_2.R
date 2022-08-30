@@ -141,7 +141,7 @@ tabPanel("goal chart",
          strong("Goal Chart"),
 
 
-         echarts4rOutput(ns("goal_chart"),height = "1000px")
+         echarts4rOutput(ns("goal_chart"),height = "600px")
 )
 
       ),
@@ -398,35 +398,40 @@ output$table4 <- renderDT(rainbow_values() %>% as.data.frame(),options = list(sc
 
       scores <- reactive(data.frame(score = P2()))
 
-      rainbow_values <- reactive({
+      unet.df <- reactive({
         (unet_flows()*  user_edits_all_metrics()[["Weight"]]) %>% as.data.frame() %>%
           `colnames<-`(criteria_names()) %>%
           add_column(SWSID = alternatives()) %>%
           cbind(scores() ) %>%
           slice_max(score,n = results_to_return()) %>%
-           pivot_longer(cols = -c(SWSID,score),names_to = "Name") #%>%
-         # merge(user_edits_all_metrics()) #%>%
-          # mutate(phi_group = ifelse(value>=0,"pos","neg"))
+           pivot_longer(cols = -c(SWSID,score),names_to = "Name") %>%
+          mutate(pos = ifelse(value >= 0, value, 0))%>%
+        mutate(neg = ifelse(value < 0, value, 0)) %>%
+          left_join(metrics %>% select(1:11))
       })
 
 
 
 
+#
+#           rainbow.df <- reactive(rainbow_values() %>%
+#                                    #pivot_longer(cols = -c(SWSID#, score
+#                                     #                      ), names_to = "Name") %>%
+#                                    mutate(pos = ifelse(value >= 0, value, 0)) %>%
+#                                    mutate(neg = ifelse(value < 0, value, 0)) %>%
+#                                    left_join(metrics))
 
-          rainbow.df <- reactive(rainbow_values() %>%
-                                   #pivot_longer(cols = -c(SWSID#, score
-                                    #                      ), names_to = "Name") %>%
-                                   mutate(pos = ifelse(value >= 0, value, 0)) %>%
-                                   mutate(neg = ifelse(value < 0, value, 0)) %>%
-                                   left_join(metrics))
+
+
+      rainbow.goals <- reactive(unet.df() %>% group_by(Goal,SWSID,score) %>%
+        dplyr::summarise(pos = sum(pos),neg=sum(neg),total = sum(value)) %>%
+        mutate(Goal = paste("Goal",Goal)))
+
+      basin.scores <- reactive(rainbow.goals() %>% group_by(SWSID) %>% summarise(score = max(score)) )
 
 
 
-          rainbow.goals <- reactive(rainbow.df() %>%
-                                      group_by(Goal,SWSID) %>%
-                                      arrange(score) %>%
-                                      dplyr::summarise(pos = sum(pos),neg=sum(neg),total = sum(value)) %>%
-                                      mutate(Goal = paste("Goal",Goal)))
+      merged.df <- reactive(rainbow.goals() %>%  merge(basin.scores()))
 
           # top.pts <- reactive(rainbow.goals() %>% group_by(SWSID) %>% summarise(val = sum(total)) %>%
           #                       select(SWSID = SWSID, yAxis = val, score = val))
@@ -444,19 +449,18 @@ output$table4 <- renderDT(rainbow_values() %>% as.data.frame(),options = list(sc
 
 
           output$goal_chart <- renderEcharts4r({
-            rainbow_values() %>% group_by(SWSID)
-            #rainbow.goals()  %>%  #arrange(total) %>%
-              e_charts() %>%# ,name = "subbasin")  %>%
-              #e_bar(total,stack = "total") %>%
-              e_bar(total,stack = "pos") %>%
-              echarts4r::e_flip_coords() %>%
-              #  e_bar()
-              #e_bar(neg,stack = "neg") %>%
-              #  e_bar(pos,stack = "pos")  %>%
-              # e_bar(neg,stack = "neg") %>%
-              e_y_axis(inverse = TRUE) %>%
+
+            merged.df()  %>%   group_by(Goal) %>% arrange((score)) %>%
+              e_charts(SWSID) %>%
+              e_bar(pos, stack = 'stack2')%>%
+              e_bar(neg, stack = "stack1") %>%
+              #e_flip_coords() %>%
               e_labels(position  ='inside',fontSize = 9,formatter = '{a} ') %>%
-              e_tooltip() |> e_toolbox_feature(feature = "dataView")
+              e_tooltip() %>% e_y_axis(axisLine =
+                                         list(symbol = 'arrow', show = TRUE
+                                         ),
+                                       axisLabel = list(show=FALSE)) %>% e_toolbox_feature("dataView")
+
           })
 
       # rainbow_goals <- reactive(

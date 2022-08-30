@@ -28,7 +28,7 @@ ui <-
       shinydashboard::dashboardBody(
         tabItems(
 
-         tabItem("lp",  landingpage_ui(actionButton("go",label = "Get Started", class = "btn btn-primary btn-lg"))),
+         tabItem("lp",  landingpage_ui(actionButton("go",label = "Get Started", class = "btn btn-primary btn-lg", style = "color:white"))),
           tabItem("filter_locations",filter_page_UI("filter-main")),
           tabItem("criteria",criteria_page_UI2("criteria-main"))
          #tabItem("Debug",debugUI("main"))
