@@ -7,6 +7,8 @@ require(shinydashboardPlus)
 require(DT)
 require(dplyr)
 require(spdplyr)
+require(shinyjs)
+require(reactable)
 # load(here::here("data", "subbasin_data.rda"))
 # load(here::here("data", "subbasin_shps.rda"))
 # load(here::here("data", "city_names.rda"))
@@ -347,19 +349,19 @@ filter_page_server <- function(id, watershed.data) {
 
         reactable(
           display_table(),
-          defaultColDef = colDef(align = 'center'),
-          columns = list(
-            Presence_of_Shellfish = colDef(name = 'Presence of Shellfish', cell = function(value) {make_tf_icons(value)}),
-            Drains_to_P_Sensitive_Lake = colDef(name = 'Drains to Phosphorus Sensitive Lake', cell = function(value) {make_tf_icons(value)}),
-            Is_Headwater_Basin = colDef(name = 'Headwater Basin', cell = function(value) {make_tf_icons(value)}),
-            Contains_Swimming_Beaches = colDef(name = 'Contains Swimming Beaches', cell = function(value) {make_tf_icons(value)})
-            #   ifelse(value, tagList(shiny::icon('check-circle',style = "color:#00A65A")),
-            #          tagList(shiny::icon('minus-circle',class = "regular", style = "color:#EB8D80")))
-            #   }
-
-
-
-          )
+          defaultColDef = colDef(align = 'center')
+          # columns = list(
+          #   Presence_of_Shellfish = colDef(name = 'Presence of Shellfish', cell = function(value) {make_tf_icons(value)}),
+          #   Drains_to_P_Sensitive_Lake = colDef(name = 'Drains to Phosphorus Sensitive Lake', cell = function(value) {make_tf_icons(value)}),
+          #   Is_Headwater_Basin = colDef(name = 'Headwater Basin', cell = function(value) {make_tf_icons(value)}),
+          #   Contains_Swimming_Beaches = colDef(name = 'Contains Swimming Beaches', cell = function(value) {make_tf_icons(value)})
+          #   #   ifelse(value, tagList(shiny::icon('check-circle',style = "color:#00A65A")),
+          #   #          tagList(shiny::icon('minus-circle',class = "regular", style = "color:#EB8D80")))
+          #   #   }
+          #
+          #
+          #
+          # )
         )
 })
 

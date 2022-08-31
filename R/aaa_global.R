@@ -11,6 +11,7 @@ require(tibble)
 require(echarts4r)
 require(reactable)
 require(tidyr)
+require(shinyjs)
 
 load(here::here("data", "subbasin_data.rda"))
 load(here::here("data", "subbasin_shps.rda"))
