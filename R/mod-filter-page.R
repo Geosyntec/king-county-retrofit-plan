@@ -301,7 +301,7 @@ filter_page_server <- function(id, watershed.data) {
         )
     })
     output$hot = renderDT(
-      display_table(),rownames = TRUE,
+      display_table(),rownames = TRUE,server = FALSE
       #  style = "bootstrap5"options = list(dom = 'tp', scrollX = TRUE),
       #  extensions = 'Responsive'
        #DT::formatPercentage("Imperviousness", 0)
