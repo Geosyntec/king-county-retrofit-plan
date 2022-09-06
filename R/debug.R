@@ -8,11 +8,11 @@ debugUI <- function(id) {
   )
 }
 
-debugServer <- function(id,filtered) {
+debugServer <- function(id,rv) {
   moduleServer(
     id,
     function(input, output, session) {
-
+    filtered <- reactive(rv$base_data)
 
       output$table <- renderPrint(filtered$data)
 
@@ -27,7 +27,7 @@ ui <- fluidPage(
 )
 
 server <- function(input, output, session) {
-  rv <- reactiveValues(data = subbasin_data) #, basin_ids = subbasin_metrics %>% rownames())
+  rv <- reactiveValues(base_data = subbasin_data) #, basin_ids = subbasin_metrics %>% rownames())
 
   debugServer("test",rv)
 }

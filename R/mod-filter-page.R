@@ -199,12 +199,12 @@ filter_page_UI <- function(id) {
 
 # Server ------------------------------------------------------------------
 
-filter_page_server <- function(id, watershed.data) {
+filter_page_server <- function(id, rv) {
   moduleServer(id, function(input, output, session) {
     # assign reactive values to module variables
 
-
-
+  watershed.data <- reactive(rv$base_data)
+  observe(print(watershed.data()))
     wria_vals <- reactive(input$wriapicker)
 
     city_vals <- reactive(input$jurisdictionpicker)
@@ -243,7 +243,7 @@ filter_page_server <- function(id, watershed.data) {
         # list of selected cities
         get_intersecting_ids(city_bounds(), subbasin_shps)
       } else {
-        row.names(watershed.data)
+        row.names(watershed.data())
       }
     })
 
@@ -272,7 +272,7 @@ filter_page_server <- function(id, watershed.data) {
     # })
 
     table_filtered_ids <- reactive({
-      user_ids <- watershed.data %>%
+      user_ids <- watershed.data() %>%
         dplyr::filter(WQBE_basin %in% wria_vals()) %>%
         dplyr::filter(Contains_Swimming_Beaches %in% swimming()) %>%
         dplyr::filter(Is_Headwater_Basin %in% headwaters()) %>%
@@ -310,7 +310,7 @@ filter_page_server <- function(id, watershed.data) {
     rv <- reactiveValues(filtered = NULL)
 
     data.df <- reactive({
-      watershed.data[row.names(watershed.data) %in% filtered_ids(), ]
+      watershed.data()[row.names(watershed.data()) %in% filtered_ids(), ]
     })
 
     observe({rv$filtered =  watershed.data[row.names(watershed.data) %in% filtered_ids(), ]})
@@ -340,14 +340,20 @@ filter_page_server <- function(id, watershed.data) {
           )
         )
     })
-    #output$hot <-
 
-      output$hot = renderDT(
-        display_table(),rownames = TRUE,server = FALSE
+    output$hot = renderDT(
+      display_table(),rownames = TRUE,server = FALSE
+      #  style = "bootstrap5"options = list(dom = 'tp', scrollX = TRUE),
+      #  extensions = 'Responsive'
+       #DT::formatPercentage("Imperviousness", 0)
+    )
+
+#      output$hot = renderDT(
+ #       display_table(),rownames = TRUE,server = FALSE
         #  style = "bootstrap5"options = list(dom = 'tp', scrollX = TRUE),
         #  extensions = 'Responsive'
         #DT::formatPercentage("Imperviousness", 0)
-      )
+  #    )
 
 #       renderReactable({
 #
@@ -579,7 +585,10 @@ ui <- fluidPage(
 )
 
 server <- function(input, output, session) {
-  filter_page_server("test", subbasin_data)
+  rv <- reactiveValues(base_data = subbasin_data,filtered_data = NULL)
+  filter_page_server("test", rv)
+
+
 }
 
 shinyApp(ui, server)
