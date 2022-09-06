@@ -41,9 +41,9 @@ server <- function(input, output, session) {
   #rv <- reactiveValues(subbasin_data = subbasin_data, metrics = metrics) #, basin_ids = subbasin_metrics %>% rownames())
 
 
-  observe(
+  observeEvent(input$go,{
     updateTabItems(session,"tabs","filter_locations")
-  ) %>% bindEvent(input$go)
+  })
 
   filtered_results <- filter_page_server("filter-main",subbasin_data)
 

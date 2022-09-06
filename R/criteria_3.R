@@ -120,33 +120,46 @@ uiOutput(ns("weight_sum")),
         ),
         shinydashboardPlus::box(
           width = 12,
-          "table",
-          # dataTableOutput(ns('metrics_out'))
-          shinycssloaders::withSpinner(DTOutput(ns('ranked_list'))))
-        ))),
+          # "table",
+          # fluidRow(
+          #   column(width = 6,
+          #   "Weighted Sum Results:",
+          #   DTOutput(ns("weighted_sum_results"))),
+          # # dataTableOutput(ns('metrics_out'))
+          # column(width = 6,
+          shinycssloaders::withSpinner(DTOutput(ns('ranked_list'))
+          )
+        )#end box
+      ))),
       tabPanel("Input Data",
                fluidRow(
                  column(12,
-        DTOutput(ns("table2")),
-        verbatimTextOutput(ns("criteria_debug")),
-        "user edits:",
-        DTOutput(ns("table3"))
+        strong("Performance Table"),
+        DTOutput(ns("PT")),
+        strong("all metrics"),
+        DTOutput(ns("all_metrics")),
+        strong("Weights"),
+        verbatimTextOutput(ns("Weights")),
+        strong("MinMax"),
+        verbatimTextOutput(ns("minmax"))
+
 ))
-      ),
-      tabPanel("min_max",
-               strong("Table 4"),
-               DTOutput(ns("table4"))
-               ),
-tabPanel("goal chart",
-         strong("Goal Chart"),
+      )
+# ,
+#       tabPanel("min_max",
+#                strong("Table 4"),
+#                DTOutput(ns("table4"))
+#                ),
+# tabPanel("goal chart",
+#          strong("Goal Chart"),
+#
+#
+#          echarts4rOutput(ns("goal_chart"),height = "600px")
+# )
 
+      )
 
-         echarts4rOutput(ns("goal_chart"),height = "600px")
-)
-
-      ),
-
-    ), # column to hold outputs
+    ) # column to hold outputs
 
 
     # dataTableOutput(ns('table')),
@@ -162,24 +175,53 @@ criteria_page_server2 <- function(id, filtered) {
     id,
     function(input, output, session) {
       ns <- NS(id)
+      observe(
+      req(filtered()))
       goals <- metrics %>% select(Goal, Goal_Description) %>% unique()
 
       # count number of basins
-      cleaned_criteria <- reactive(filtered() %>% select_if(is.numeric)) # %>% na.omit())
+      cleaned_criteria <- reactive(filtered() %>% select_if(is.numeric) %>% na.omit())
+      observe({
+        if(sum(is.na(filtered()  %>% select_if(is.numeric) %>% colSums())) != TRUE){
+          showNotification(
+            (paste(
+              nrow(filtered())-nrow(cleaned_criteria()),
+              #print(apply(filtered(), MARGIN = 1, function(x) sum(is.na(x))) %>% sum()),
+
+              'rows containing NA values removed')
+            ),
+             duration = NULL, type = "warning")
+
+        }
+      })
+
+
+
+
+
+
+
+
+      # %>% na.omit())
       criteria_names <- reactive(cleaned_criteria() %>% colnames())
       alternatives <- reactive(cleaned_criteria() %>% rownames())
-      row_count <- reactive(nrow(filtered()))
+      row_count <- reactive(nrow(cleaned_criteria()))
+
+
 
       output$count_items <- renderUI({card(.num = row_count(), .description = "Total Subbasins")})
       #check for nas
 
       #shapes
       shps_selected <- reactive({
-        req(filtered())
-        subbasin_shps[which(subbasin_shps$SWSID %in% (filtered() %>% rownames())),]
+        req(cleaned_criteria())
+        subbasin_shps[which(subbasin_shps$SWSID %in% (cleaned_criteria() %>% rownames())),]
       })
       # get column names and match to metrics dictionary
-      all_metrics <- reactive({
+
+
+    all_metrics <- reactive({
+      req(criteria_names())
         metrics %>%
           dplyr::filter(Name %in% criteria_names())}) #%>% # %>% add_column(Include = TRUE,.before=1) %>%
 
@@ -286,17 +328,47 @@ criteria_page_server2 <- function(id, filtered) {
         Weight = user_weights()
       ))
 
-    user_edits_all_metrics <- reactive(merge(metrics %>% select("Name", "Goal","Metric_no", "orientation_protect", "orientation_restore" ), user_weights.df(), by.x = "Goal", by.y = "Goal"))
+    user_edits_all_metrics <- reactive({
+      req(c(all_metrics(),user_weights.df()))
+      merge(
+      all_metrics() %>%
+        select("Criteria Name" = "Name", "Goal","Metric_no", "orientation_protect", "orientation_restore"),
+        user_weights.df(), by.x = "Goal", by.y = "Goal")
+      })
 
 
-      output$criteria_debug <- renderText(user_edits_all_metrics()["Weight"] %>% class())
+
+# ***Inputs debug ------------------------------------------------------------
 
 
-      output$table2 <-#renderDataTable(
-        DT::renderDT(cleaned_criteria(),  options = list(scrollX = TRUE)
-          )#user_weights())
-      #%>% bindEvent(user_weights())
-output$table3 <- renderDT(user_edits_all_metrics())
+  output$criteria_debug <- renderText(user_edits_all_metrics()["Weight"] %>% class())
+
+    output$PT <- renderDT({DT::datatable(
+      top_weighted(),
+      extensions = 'Buttons',
+
+      options = list(
+      #dom = 'tB',
+      buttons = c('copy', 'csv', 'excel')))
+      })
+    output$all_metrics <- renderDT(all_metrics())
+
+    output$Weights <- renderText(weights_oriented())
+    output$minmax <- renderText(min_max.vec())
+
+observe(print(
+  paste(
+
+  "Weights: ",user_edits_all_metrics()[["Weight"]] %>% length(),
+  "minmax: ", min_max.vec() %>% length(),
+  "Performance Table", top_weighted()
+ # cleaned_criteria() %>% dplyr::filter(rownames(cleaned_criteria()) %in% (top_weighted %>% rownames()))
+  )
+  )
+)
+
+output$weighted_sum_results <- renderDT(top_weighted() %>% as.data.frame())
+
 output$table4 <- renderDT(rainbow_values() %>% as.data.frame(),options = list(scrollX = TRUE))
       DF <- reactive(goal_metrics())
       #       if(input$goal_tiers_select =="Subgoals"){
@@ -352,33 +424,82 @@ output$table4 <- renderDT(rainbow_values() %>% as.data.frame(),options = list(sc
 
       output$card1 <- renderUI(card(num_basins(), "Basins Selected"))
       output$card2 <- renderUI(card(num_criteria(), "Criteria Selected"))
-      output$table <- renderDataTable(filtered() %>% head())
+      output$table <- renderDataTable(cleaned_criteria() %>% head())
+
+
+
 
 
 # Get user edited weights -------------------------------------------------
       min_max.df <- reactive({
         if(input$orientation_select == "Protection"){
-               data.frame(min_max = metrics$orientation_protect)}else{
-               data.frame(min_max = metrics$orientation_restore)}
-               #pull(metrics, orientation_protect),pull(metrics, orientation_restore)) %>% as.data.frame()
-        #ifelse(input$orientation_select == "Protection",mtcars,iris)
-                             #user_edits_all_metrics() %>% select(c("Metric_no", "orientation_protect")),
-                             #user_edits_all_metrics() %>% select(c("Metric_no", "orientation_protect")))
+               data.frame(min_max = all_metrics()[['orientation_protect']])}else{
+               data.frame(min_max = all_metrics()[['orientation_restore']])}
+
+      })
+
+      min_max.vec <- reactive({
+        if(input$orientation_select == "Protection"){
+          all_metrics()[['orientation_protect']]}else{
+           all_metrics()[['orientation_restore']]}
+
       })
 
 
+
+# weighted sum ------------------------------------------------------------
+
+
+      #Return just the top values from weighted sum to speed up the call
+      #first orient the weights
+
+      weights_oriented <- reactive({
+        orient_weights(minmax =min_max.vec(),
+                       weights = user_edits_all_metrics()[["Weight"]] %>% as.vector())
+                                                   })
+      top_weighted <- reactive({
+        req(cleaned_criteria())
+        scaled_weighted_sum(performanceTable = cleaned_criteria(),
+                            weights = weights_oriented(),num_to_return = input$n)
+      })
+
+      performanceTable_topids_only <- reactive(top_weighted())
+      top_basin_names <- reactive(performanceTable_topids_only %>% rownames())
+
+
+
+
+
+      # weighted_sum(performanceTable, orient_weights(weights,minmax))
+
+      # min_max <- reactive({min_max.df()["min_max"]})
+      # weighting =  user_edits_all_metrics()[["Weight"]]
+      # IndT <- user_edits_all_metrics()[["Weight"]]*user_edits_all_metrics()[["Indifference_Threshold_Percentage"]]
+      # PreT = IndT
+      # PreF = rep("V-shape", cleaned_criteria() %>% ncol())
       #observe(print(min_max() %>% ))
       # Get mcda results --------------------------------------------------------
+
+      # observe({
+      #   print(
+      #   c(
+      #   min_max.df()[["min_max"]],
+      # user_edits_all_metrics()[["Weight"]],
+      # user_edits_all_metrics()[["Weight"]]*user_edits_all_metrics()[["Indifference_Threshold_Percentage"]],
+      #
+      # rep("V-shape", performanceTable_topids_only() %>% ncol())) )
+      # })
+
       mcda_results <- reactive({
-        min_max <- reactive({min_max.df()[["min_max"]]})
-        weighting <- user_edits_all_metrics()
+        min_max <- (min_max.df()["min_max"])
+        weighting =  user_edits_all_metrics()[["Weight"]]
           IndT <- user_edits_all_metrics()[["Weight"]]*user_edits_all_metrics()[["Indifference_Threshold_Percentage"]]
           PreT = IndT
-          PreF = rep("V-shape", cleaned_criteria() %>% ncol())
+          PreF = rep("V-shape", performanceTable_topids_only() %>% ncol())
       return(
 
         promethee_2(
-          dataset = cleaned_criteria(), weighting = user_edits_all_metrics()[["Weight"]], minmax = min_max()#, limit = results_to_return()
+          dataset = performanceTable_topids_only(), weighting = user_edits_all_metrics()[["Weight"]], minmax =min_max.vec()#, limit = results_to_return()
         ))
       }) %>% bindEvent(input$accept_weights,ignoreInit = TRUE)
 
@@ -394,6 +515,7 @@ output$table4 <- renderDT(rainbow_values() %>% as.data.frame(),options = list(sc
 
       P1 <- reactive(mcda_results()[["PROMETHEE1"]])
       P2 <- reactive(mcda_results()[["PROMETHEE2"]])
+      #observe(print(P1()))
       unet_flows <- reactive(   (mcda_results()[["UnicriterionNetFlows"]]))
 
       scores <- reactive(data.frame(score = P2()))
@@ -407,7 +529,7 @@ output$table4 <- renderDT(rainbow_values() %>% as.data.frame(),options = list(sc
            pivot_longer(cols = -c(SWSID,score),names_to = "Name") %>%
           mutate(pos = ifelse(value >= 0, value, 0))%>%
         mutate(neg = ifelse(value < 0, value, 0)) %>%
-          left_join(metrics %>% select(1:11))
+          left_join(all_metrics() %>% select(1:11))
       })
 
 
@@ -473,18 +595,7 @@ output$table4 <- renderDT(rainbow_values() %>% as.data.frame(),options = list(sc
 
 
 
-      pf2_outflows <- reactive({
-        data.frame(
-        row.names = cleaned_criteria() %>% row.names(),
-        phi_plus = P1()[,1],
-        phi_minus = P1()[,2]
-        ) %>%
-           round(2) %>%
-           mutate(score = (phi_plus - phi_minus) %>%
-             round(digits = 2)) %>%
-           mutate(score_rank = min_rank(-score))%>%
-          slice_max(score,n = results_to_return()) %>% sig_figs()
-      })
+         pf2_outflows<- reactive(mcda_results()[["out_flows"]])
 
       # pf2_outflows <- reactive(
       #   P1() %>% as.data.frame() %>%
@@ -497,9 +608,11 @@ output$table4 <- renderDT(rainbow_values() %>% as.data.frame(),options = list(sc
 
 
 
-      output$ranked_list <- renderDT({DT::datatable(
+      output$ranked_list <- renderDT(
+       # req(pf2_outflows())
+                                     {DT::datatable(
 
-           #req(pf2_outflows())
+
 
 
         pf2_outflows(),options = list(paging = FALSE))
@@ -510,7 +623,7 @@ output$table4 <- renderDT(rainbow_values() %>% as.data.frame(),options = list(sc
       })
 
 # map
-      top_ids <- reactive(rownames(pf2_outflows()))
+      #top_ids <- reactive(rownames(pf2_outflows()))
 
 
       top_shps <- reactive(
@@ -521,7 +634,7 @@ output$table4 <- renderDT(rainbow_values() %>% as.data.frame(),options = list(sc
       # Create a continuous palette function
 
       values <- reactive(pf2_outflows()[["score"]])
-      observe(print(values() %>% unlist()))
+     # observe(print(values() %>% unlist()))
 
 
       output$map <- renderLeaflet({
@@ -553,14 +666,9 @@ output$table4 <- renderDT(rainbow_values() %>% as.data.frame(),options = list(sc
       })
 
       observe({
-        map.pal <- (colorBin("viridis", values(), 6, pretty = TRUE,reverse = FALSE))
+        map.pal <- (colorBin("inferno", values(), 6, pretty = TRUE,reverse = FALSE))
 
-        labels <- paste(sep = "<br/>",
-             "<b><a href='http://www.samurainoodle.com'>Samurai Noodle</a></b>",
-             "606 5th Ave. S",
-             "Seattle, WA 98138"
-        )
-        pal.rev <- (colorBin("viridis", values(), 6, pretty = TRUE,reverse = TRUE))
+        pal.rev <- (colorBin("inferno", values(), 6, pretty = TRUE,reverse = TRUE))
         leafletProxy("map") %>%
           clearGroup("top_sheds") %>%
           leaflet::removeControl("legend") %>%
@@ -584,7 +692,7 @@ output$table4 <- renderDT(rainbow_values() %>% as.data.frame(),options = list(sc
                           position = "bottomleft",
                           labFormat = labelFormat(transform = function(x) sort(x, decreasing = TRUE)))
 
-      }) #%>% bindEvent(input$accept_weights, ignoreInit = TRUE)
+      }) %>% bindEvent(input$accept_weights, ignoreInit = TRUE)
 
       # leafletProxy("map") %>%
       #   clearGroup("selected_sheds") %>%
@@ -614,7 +722,15 @@ server <- function(input, output, session) {
   source(here::here("R", "promethee.R"))
   source(here::here("R", "fct_helpers.R"))
   load(here::here("data", "subbasin_data.rda"))
-  mock_filtered <- reactive(subbasin_data %>% filter(WQBE_basin ==    "White")) #%>% sample_n(100))
+  mock_filtered <- reactive(
+    subbasin_data %>%
+      #na.omit() %>%
+      sample_n(1000) %>%
+      select_if(is.numeric)# %>%
+      #head(10) %>%
+      #select(c(1:7),)
+    )
+
   criteria_page_server2("criteria-test", mock_filtered)
 }
 

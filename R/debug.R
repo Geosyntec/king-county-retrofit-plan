@@ -1,3 +1,6 @@
+
+source(here::here('R','aaa_global.R'))
+
 debugUI <- function(id) {
   ns <- NS(id)
   tagList(
@@ -11,7 +14,7 @@ debugServer <- function(id,filtered) {
     function(input, output, session) {
 
 
-      output$table <- renderPrint(filtered())
+      output$table <- renderPrint(filtered$data)
 
     }
   )

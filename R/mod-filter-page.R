@@ -184,7 +184,7 @@ filter_page_UI <- function(id) {
              tabPanel(title = "Data Table",
 
         shinycssloaders::withSpinner(
-          reactableOutput(outputId = ns("hot")))),
+          DTOutput(outputId = ns("hot")))),
           tabPanel(
             width = NULL, title = "Data Check",
             verbatimTextOutput(ns('react'))
@@ -340,30 +340,38 @@ filter_page_server <- function(id, watershed.data) {
           )
         )
     })
-    output$hot <-
-      renderReactable({
+    #output$hot <-
 
-      make_tf_icons <- function(value){
-        ifelse(value, tagList(shiny::icon('check-circle',style = "color:#00A65A")),
-               tagList(shiny::icon('minus-circle',class = "regular", style = "color:#dd4b39"),value))}
+      output$hot = renderDT(
+        display_table(),rownames = TRUE,server = FALSE
+        #  style = "bootstrap5"options = list(dom = 'tp', scrollX = TRUE),
+        #  extensions = 'Responsive'
+        #DT::formatPercentage("Imperviousness", 0)
+      )
 
-        reactable(
-          display_table(),
-          defaultColDef = colDef(align = 'center')
-          # columns = list(
-          #   Presence_of_Shellfish = colDef(name = 'Presence of Shellfish', cell = function(value) {make_tf_icons(value)}),
-          #   Drains_to_P_Sensitive_Lake = colDef(name = 'Drains to Phosphorus Sensitive Lake', cell = function(value) {make_tf_icons(value)}),
-          #   Is_Headwater_Basin = colDef(name = 'Headwater Basin', cell = function(value) {make_tf_icons(value)}),
-          #   Contains_Swimming_Beaches = colDef(name = 'Contains Swimming Beaches', cell = function(value) {make_tf_icons(value)})
-          #   #   ifelse(value, tagList(shiny::icon('check-circle',style = "color:#00A65A")),
-          #   #          tagList(shiny::icon('minus-circle',class = "regular", style = "color:#EB8D80")))
-          #   #   }
-          #
-          #
-          #
-          # )
-        )
-})
+#       renderReactable({
+#
+#       make_tf_icons <- function(value){
+#         ifelse(value, tagList(shiny::icon('check-circle',style = "color:#00A65A")),
+#                tagList(shiny::icon('minus-circle',class = "regular", style = "color:#dd4b39"),value))}
+#
+#         reactable(
+#           display_table(),
+#           defaultColDef = colDef(align = 'center')
+#           # columns = list(
+#           #   Presence_of_Shellfish = colDef(name = 'Presence of Shellfish', cell = function(value) {make_tf_icons(value)}),
+#           #   Drains_to_P_Sensitive_Lake = colDef(name = 'Drains to Phosphorus Sensitive Lake', cell = function(value) {make_tf_icons(value)}),
+#           #   Is_Headwater_Basin = colDef(name = 'Headwater Basin', cell = function(value) {make_tf_icons(value)}),
+#           #   Contains_Swimming_Beaches = colDef(name = 'Contains Swimming Beaches', cell = function(value) {make_tf_icons(value)})
+#           #   #   ifelse(value, tagList(shiny::icon('check-circle',style = "color:#00A65A")),
+#           #   #          tagList(shiny::icon('minus-circle',class = "regular", style = "color:#EB8D80")))
+#           #   #   }
+#           #
+#           #
+#           #
+#           # )
+#         )
+# })
 
 
 
