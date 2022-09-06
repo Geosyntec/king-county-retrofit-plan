@@ -30,8 +30,8 @@ ui <-
 
          tabItem("lp",  landingpage_ui(actionButton("go",label = "Get Started", class = "btn btn-primary btn-lg", style = "color:white"))),
           tabItem("filter_locations",filter_page_UI("filter-main")),
-          tabItem("criteria",criteria_page_UI2("criteria-main"))
-         #tabItem("Debug",debugUI("main"))
+         # tabItem("criteria",criteria_page_UI2("criteria-main"))
+         tabItem("Debug",debugUI("main"))
         )
       ))
 
@@ -44,15 +44,18 @@ server <- function(input, output, session) {
   observe(
     updateTabItems(session,"tabs","filter_locations")
   ) %>% bindEvent(input$go)
+  rv <- reactiveValues(base_data = subbasin_data,filtered_data = NULL)
+  #mock_filtered <- reactive(subbasin_data %>% filter(WQBE_basin ==    "White")) #%>% sample_n(100))
+  # filtered_results <-
+  filter_page_server("filter-main",rv)
 
-  filtered_results <- filter_page_server("filter-main",subbasin_data)
+  # observe(
+  #   updateTabItems(session,"tabs","criteria")
+  # ) %>% bindEvent(filtered_results())
 
-  observe(
-    updateTabItems(session,"tabs","criteria")
-  ) %>% bindEvent(filtered_results())
-
-  criteria_page_server2("criteria-main",filtered_results)
-  #debugServer("main",filtered_results)
+  #criteria_page_server2("criteria-test", rv)
+  #criteria_page_server2("criteria-main",filtered_results)
+  debugServer("main",rv)
 }
 
 shinyApp(ui, server)
