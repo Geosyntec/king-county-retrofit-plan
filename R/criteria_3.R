@@ -111,11 +111,12 @@ uiOutput(ns("weight_sum")),
                       column(width = 12,
       shinydashboardPlus::box(
         width = 12,
-      fluidRow(column(width = 4, uiOutput(ns("count_items"))),
-               column(width = 4,
-        shiny::selectInput(ns("n"),selected = 25, multiple = FALSE, label = "Select number of results to return:",
-                           choices = c(10,25,50,100)
-                           ))),
+      fluidRow(column(width = 4, uiOutput(ns("count_items")))
+        #        column(width = 4,
+        # shiny::selectInput(ns("n"),selected = 25, multiple = FALSE, label = "Select number of results to return:",
+        #                    choices = c(10,25,50,100)
+        #                    ))
+        ),
         shinycssloaders::withSpinner(leafletOutput(ns("map")))
         ),
         shinydashboardPlus::box(
@@ -344,30 +345,32 @@ criteria_page_server2 <- function(id, filtered) {
   output$criteria_debug <- renderText(user_edits_all_metrics()["Weight"] %>% class())
 
     output$PT <- renderDT({DT::datatable(
-      top_weighted(),
+      performanceTable_topids_only(),
       extensions = 'Buttons',
 
       options = list(
       #dom = 'tB',
-      buttons = c('copy', 'csv', 'excel')))
+      buttons = c('copy', 'csv', 'excel'),
+      scrollX = TRUE)
+      )
       })
     output$all_metrics <- renderDT(all_metrics())
 
     output$Weights <- renderText(weights_oriented())
     output$minmax <- renderText(min_max.vec())
 
-observe(print(
-  paste(
+# observe(print(
+#   paste(
+#
+#   "Weights: ",user_edits_all_metrics()[["Weight"]] %>% length(),
+#   "minmax: ", min_max.vec() %>% length(),
+#   "Performance Table", performanceTable_topids_only()
+#  # cleaned_criteria() %>% dplyr::filter(rownames(cleaned_criteria()) %in% (performanceTable_topids_only %>% rownames()))
+#   )
+#   )
+# )
 
-  "Weights: ",user_edits_all_metrics()[["Weight"]] %>% length(),
-  "minmax: ", min_max.vec() %>% length(),
-  "Performance Table", top_weighted()
- # cleaned_criteria() %>% dplyr::filter(rownames(cleaned_criteria()) %in% (top_weighted %>% rownames()))
-  )
-  )
-)
-
-output$weighted_sum_results <- renderDT(top_weighted() %>% as.data.frame())
+output$weighted_sum_results <- renderDT(performanceTable_topids_only() %>% as.data.frame())
 
 output$table4 <- renderDT(rainbow_values() %>% as.data.frame(),options = list(scrollX = TRUE))
       DF <- reactive(goal_metrics())
@@ -457,14 +460,15 @@ output$table4 <- renderDT(rainbow_values() %>% as.data.frame(),options = list(sc
         orient_weights(minmax =min_max.vec(),
                        weights = user_edits_all_metrics()[["Weight"]] %>% as.vector())
                                                    })
-      top_weighted <- reactive({
-        req(cleaned_criteria())
+      performanceTable_topids_only <- reactive({
+        #req(cleaned_criteria())
+        #req(input$n)
         scaled_weighted_sum(performanceTable = cleaned_criteria(),
-                            weights = weights_oriented(),num_to_return = input$n)
+                            weights = weights_oriented())#,num_to_return = input$n)
       })
 
-      performanceTable_topids_only <- reactive(top_weighted())
-      top_basin_names <- reactive(performanceTable_topids_only %>% rownames())
+
+      top_basin_names <- reactive(performanceTable_topids_only() %>% rownames())
 
 
 
@@ -503,7 +507,7 @@ output$table4 <- renderDT(rainbow_values() %>% as.data.frame(),options = list(sc
         ))
       }) %>% bindEvent(input$accept_weights,ignoreInit = TRUE)
 
-      results_to_return <- reactive(as.numeric(input$n))
+      results_to_return <- reactive(25)
 
       # radioButtons(
       #   inputId = ns("orientation_select"),

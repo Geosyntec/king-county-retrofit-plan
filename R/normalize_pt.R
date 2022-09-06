@@ -71,3 +71,4 @@ scaleToUnitLength <- function(data){
   data <- data/norm
   return(data)
 }
+

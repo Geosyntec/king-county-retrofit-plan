@@ -12,25 +12,36 @@ landingpage_ui <- function(button) {
   )
 }
 
+about_ui <- function(){
+  tagList(HTML(
+    paste0(
+  '<!-- 16:9 aspect ratio -->
+    <div class="embed-responsive embed-responsive-16by9">
+      <iframe class="embed-responsive-item" src="https://www.kingcounty.gov"></iframe>
+        </div>'
+    )))
+}
+
 ui <-
   shinydashboard::dashboardPage(
     header = shinydashboard::dashboardHeader(),
     sidebar = shinydashboardPlus::dashboardSidebar(
       sidebarMenu(id = 'tabs',
        menuItem("Home",tabName = "lp"),
-        menuItem("Filter Locations", tabName = "filter_locations"),
-        menuItem("Criteria", tabName = "criteria"),
+       menuItem("About",tabName = "about"),
+        menuItem("Pre-screen", tabName = "filter_locations"),
+        menuItem("Prioritize Subbasins", tabName = "criteria"),
        menuItem("Debug",tabName = "Debug")
-
       )
     ),
     body =
       shinydashboard::dashboardBody(
         tabItems(
 
-         tabItem("lp",  landingpage_ui(actionButton("go",label = "Get Started", class = "btn btn-primary btn-lg", style = "color:white"))),
-          tabItem("filter_locations",filter_page_UI("filter-main")),
-          tabItem("criteria",criteria_page_UI2("criteria-main"))
+        tabItem("lp",  landingpage_ui(actionButton("go",label = "Get Started", class = "btn btn-primary btn-lg", style = "color:white"))),
+        tabItem('about',about_ui()),
+        tabItem("filter_locations",filter_page_UI("filter-main")),
+        tabItem("criteria",criteria_page_UI2("criteria-main"))
          #tabItem("Debug",debugUI("main"))
         )
       ))

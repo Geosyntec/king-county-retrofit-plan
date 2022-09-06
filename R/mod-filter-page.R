@@ -419,15 +419,10 @@ filter_page_server <- function(id, watershed.data) {
       }
     )
 
-
-
-
-
-
-
-    output$map <- renderLeaflet({
+output$map <- renderLeaflet({
       leaflet(subbasin_shps) %>%
-        addProviderTiles("CartoDB.DarkMatter", group = "Dark") %>%
+        addProviderTiles("Esri.OceanBasemap", group = "Dark") %>%
+        addProviderTiles("CartoDB.DarkMatter", group = "Base") %>%
         addProviderTiles("Esri.WorldGrayCanvas", group = "Grey") %>%
         addProviderTiles("Esri.WorldImagery", group = "Satellite") %>%
         addLayersControl(

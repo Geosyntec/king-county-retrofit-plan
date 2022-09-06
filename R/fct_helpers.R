@@ -375,14 +375,19 @@ scaled_weighted_sum <- function(performanceTable,weights,num_to_return=25){
   if(sapply(performanceTable, function(x) all(varhandle::check.numeric(x, na.rm=TRUE)))  %>% all()){
     # handle nas: replaces column with zeros
     #performanceTable[which(is.na(performanceTable %>% colSums()))] <- 0
-    n <- min(num_to_return,nrow(performanceTable))
+    if(is.null(num_to_return)){
+      n <- 25
+    } else {
+      n <- min(num_to_return,nrow(performanceTable))
+    }
+
 
     scaled_vals <- normalizePT(performanceTable,"rescaling") %>% na.omit()
     x <- MCDA::weightedSum(scaled_vals,weights) #%>% as.data.frame() #%>% top_n(25) %>% rownames()
     top_ids <- tail(sort(x,method='quick'),n) %>% names()
-
+    table_out <- performanceTable[which(rownames(performanceTable) %in% top_ids) ,]
     return(
-      performanceTable[which(rownames(performanceTable) %in% top_ids) ,]
+      table_out
     )
   } else {
     stop("performance table is not all numeric")
@@ -394,15 +399,15 @@ scaled_weighted_sum <- function(performanceTable,weights,num_to_return=25){
 
 #
 #
-# #Testing
-#
-# performanceTable <- subbasin_data %>%  select_if(is.numeric) #%>% na.omit()
-# c <- ncol(performanceTable)
-# n <- nrow(performanceTable)
-# minmax <- sample(c('min','max'),c,replace = TRUE)
-# weights <-runif(c, 0,5)
-#
-# weights_oriented <- orient_weights(weights,minmax)
-# x <- scaled_weighted_sum(performanceTable, orient_weights(weights,minmax))
-# print(apply(performanceTable, MARGIN = 1, function(x) sum(is.na(x))) %>% sum())
-#
+#Testing
+
+performanceTable <- subbasin_data %>%  select_if(is.numeric) %>% na.omit()
+c <- ncol(performanceTable)
+n <- nrow(performanceTable)
+minmax <- sample(c('min','max'),c,replace = TRUE)
+weights <-runif(c, 0,5)
+
+weights_oriented <- orient_weights(weights,minmax)
+x <- scaled_weighted_sum(performanceTable, orient_weights(weights,minmax))
+print(apply(performanceTable, MARGIN = 1, function(x) sum(is.na(x))) %>% sum())
+
