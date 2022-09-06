@@ -12,26 +12,38 @@ landingpage_ui <- function(button) {
   )
 }
 
+about_ui <- function(){
+  tagList(HTML(
+    paste0(
+  '<!-- 16:9 aspect ratio -->
+    <div class="embed-responsive embed-responsive-16by9">
+      <iframe class="embed-responsive-item" src="https://www.kingcounty.gov"></iframe>
+        </div>'
+    )))
+}
+
 ui <-
   shinydashboard::dashboardPage(
     header = shinydashboard::dashboardHeader(),
     sidebar = shinydashboardPlus::dashboardSidebar(
       sidebarMenu(id = 'tabs',
        menuItem("Home",tabName = "lp"),
-        menuItem("Filter Locations", tabName = "filter_locations"),
-        menuItem("Criteria", tabName = "criteria"),
+       menuItem("About",tabName = "about"),
+        menuItem("Pre-screen", tabName = "filter_locations"),
+        menuItem("Prioritize Subbasins", tabName = "criteria"),
        menuItem("Debug",tabName = "Debug")
-
       )
     ),
     body =
       shinydashboard::dashboardBody(
         tabItems(
 
+
          tabItem("lp",  landingpage_ui(actionButton("go",label = "Get Started", class = "btn btn-primary btn-lg", style = "color:white"))),
           tabItem("filter_locations",filter_page_UI("filter-main")),
          # tabItem("criteria",criteria_page_UI2("criteria-main"))
          tabItem("Debug",debugUI("main"))
+
         )
       ))
 
@@ -41,8 +53,9 @@ server <- function(input, output, session) {
   #rv <- reactiveValues(subbasin_data = subbasin_data, metrics = metrics) #, basin_ids = subbasin_metrics %>% rownames())
 
 
-  observe(
+  observeEvent(input$go,{
     updateTabItems(session,"tabs","filter_locations")
+
   ) %>% bindEvent(input$go)
   rv <- reactiveValues(base_data = subbasin_data,filtered_data = NULL)
   #mock_filtered <- reactive(subbasin_data %>% filter(WQBE_basin ==    "White")) #%>% sample_n(100))
@@ -56,6 +69,7 @@ server <- function(input, output, session) {
   #criteria_page_server2("criteria-test", rv)
   #criteria_page_server2("criteria-main",filtered_results)
   debugServer("main",rv)
+
 }
 
 shinyApp(ui, server)

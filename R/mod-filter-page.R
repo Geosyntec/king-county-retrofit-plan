@@ -7,6 +7,8 @@ require(shinydashboardPlus)
 require(DT)
 require(dplyr)
 require(spdplyr)
+require(shinyjs)
+require(reactable)
 # load(here::here("data", "subbasin_data.rda"))
 # load(here::here("data", "subbasin_shps.rda"))
 # load(here::here("data", "city_names.rda"))
@@ -16,24 +18,28 @@ require(spdplyr)
 
 
 
+
 wria_choices <- subbasin_data$WQBE_basin %>% unique()
 # distinct(subbasin_data, WQBE_basin) #%>% paste()
 
 filter_page_UI <- function(id) {
+
   ns <- NS(id)
 
   tagList(
+    useShinyjs(),
 
     # Column 1 ----------------------------------------------------------------
     fluidRow(
       column(
         width = 4,
         # Box to hold data filters
+        div(id = ns("form"),
         shinydashboardPlus::box(
           height = "60rem", status = "primary", headerBorder = TRUE,
           title = "Filters",
           closable = FALSE,
-          width = 12,
+          width = NULL,
           collapsible = FALSE,
 
           # Filter items  -----------------------------------------------------------
@@ -70,9 +76,9 @@ filter_page_UI <- function(id) {
           ),
           htmltools::strong("Limit selection to:"),
           wellPanel(
-            fluidRow(
-              column(
-                width = 6,
+            #fluidRow(
+             # column(
+              #  width = 6,
                 awesomeCheckbox(
                   inputId = ns("check1"),
                   label = "Swimming Beaches",
@@ -82,10 +88,10 @@ filter_page_UI <- function(id) {
                   inputId = ns("check2"),
                   label = "Phosphorus Sensitive Lakes",
                   value = FALSE
-                )
+              #  )
               ),
-              column(
-                width = 6,
+              #column(
+               # width = 6,
                 awesomeCheckbox(
                   inputId = ns("check3"),
                   label = "Headwaters",
@@ -95,13 +101,13 @@ filter_page_UI <- function(id) {
                   inputId = ns("check4"),
                   label = "Shellfish Beaches",
                   value = FALSE
-                )
+                #)
               )
             )
-          )
-        ),
+          #)
+        )),
         shinydashboard::box(
-          width = 12,
+          width = NULL,
           # fixedRow
           fluidRow(
             column(
@@ -115,8 +121,17 @@ filter_page_UI <- function(id) {
             #    )
             ,
             (column(
-              width = 7, shiny::actionButton(ns("reset"), label = "Reset Filters", icon = icon("undo"), width = "90%"),
-              shiny::actionButton(ns("save"), label = "Save Subbasins", icon = icon("check"), width = "90%")
+              width = 7,
+              shiny::actionButton(ns("reset"),
+                label = "Reset Filters",
+                class = "btn btn-secondary",
+                style = "color:black",
+                icon = icon("undo"), width = "90%"
+              ),
+              shiny::actionButton(ns("save"),
+                    label = "Save Subbasins",
+                    class = "btn btn-primary",
+                    style = "color:white", icon = icon("check"), width = "90%")
             )
 
             )
@@ -135,43 +150,51 @@ filter_page_UI <- function(id) {
 
       column(
         width = 8,
-        # shinydashboardPlus::box(
-        #   title = "Map",
-        #   closable = TRUE,
-        #   width = 12,
-        #   solidHeader = TRUE,
-        #   collapsible = TRUE,
-        #   "Map"),
+        shinydashboardPlus::box(
+          title = "Map",
+          closable = FALSE,
+          width = NULL,
+          solidHeader = TRUE,
+          collapsible = TRUE,
+          shinycssloaders::withSpinner(
+            leafletOutput(
+              ns("map"),
+              height = "60rem"
+            )
+          )
 
-        tabBox( # height = "60%",
-          title = "",
+       # tabBox( # height = "60%",
+        #  title = "",
           # closable = FALSE,
-          width = 12,
+         # width = 12,
           # solidHeader = TRUE,
           # collapsible = TRUE,
+          #tabPanel(
+           # "Map",
+
+          )#,#,
+         # box("Debug", verbatimTextOutput(ns("message")))
+        #)
+      #)
+    ),
+    fluidRow(
+      column(
+      width = 12,
+      tabBox(title = NULL,width = NULL,
+             tabPanel(title = "Data Table",
+
+        shinycssloaders::withSpinner(
+          DTOutput(outputId = ns("hot")))),
           tabPanel(
-            "Map",
-            shinycssloaders::withSpinner(
-              leafletOutput(
-                ns("map"),
-                height = "60rem"
-              )
+            width = NULL, title = "Data Check",
+            verbatimTextOutput(ns('react'))
             )
-          ),
-          tabPanel("Debug", verbatimTextOutput(ns("message")))
         )
       )
-    ),
-    (column(
-      width = 12,
-      box(
-        width = 12, title = "Data Table", status = "primary", headerBorder = TRUE,
-        shinycssloaders::withSpinner(
-          DTOutput(outputId = ns("hot"))
-        )
-      ),
     ))
-  )
+    )
+
+
 }
 
 # Server ------------------------------------------------------------------
@@ -208,10 +231,10 @@ filter_page_server <- function(id, rv) {
     }))
 
     city_bounds <- reactive({
-      #cities_shp[cities_shp["CITYNAME"] %in% city_vals(), ]
-      cities_shp[cities_shp[,"CITYNAME",drop=TRUE]%in% city_vals(),] %>% st_set_crs(project_crs)
+      # cities_shp[cities_shp["CITYNAME"] %in% city_vals(), ]
+      cities_shp[cities_shp[, "CITYNAME", drop = TRUE] %in% city_vals(), ] %>% st_set_crs(project_crs)
       # list of selected cities
-      #cities_shp %>% dplyr::filter(CITYNAME %in% city_vals())
+      # cities_shp %>% dplyr::filter(CITYNAME %in% city_vals())
     })
 
 
@@ -223,6 +246,19 @@ filter_page_server <- function(id, rv) {
         row.names(watershed.data())
       }
     })
+
+
+# Reset observer ----------------------------------------------------------
+
+
+
+    #observer for reset button
+    observe({
+      #city_vals() < NULL
+      data.df() = NULL
+      reset("form")
+    }
+    ) %>% bindEvent(input$reset)
 
 
     # # add jursidction if selected
@@ -242,14 +278,15 @@ filter_page_server <- function(id, rv) {
         dplyr::filter(Is_Headwater_Basin %in% headwaters()) %>%
         dplyr::filter(Presence_of_Shellfish %in% shellfish()) %>%
         dplyr::filter(Drains_to_P_Sensitive_Lake %in% P_lakes()) %>%
-        rownames()})
+        rownames()
+    })
 
 
-      # if(is.null(user_ids)){
-      #   c("1000010", "1000020", "1000030", "1000040", "1000050", "1000060")
-      #
-      # }
-    #this joins spatial and table filters
+    # if(is.null(user_ids)){
+    #   c("1000010", "1000020", "1000030", "1000040", "1000050", "1000060")
+    #
+    # }
+    # this joins spatial and table filters
     filtered_ids <- reactive({
       if (length(table_filtered_ids() > 0)) {
         return(table_filtered_ids()[table_filtered_ids() %in% spatial_filter_ids()])
@@ -257,7 +294,7 @@ filter_page_server <- function(id, rv) {
         return(table_filtered_ids())
       }
     })
-    #observe(print(spatial_filter_ids()))
+    # observe(print(spatial_filter_ids()))
     # %>%
     #   bindEvent(c(
     #     wria_vals(),
@@ -270,12 +307,15 @@ filter_page_server <- function(id, rv) {
     #   ignoreInit = FALSE)
 
 
+    rv <- reactiveValues(filtered = NULL)
 
     data.df <- reactive({
       watershed.data()[row.names(watershed.data()) %in% filtered_ids(), ]
     })
 
+    observe({rv$filtered =  watershed.data[row.names(watershed.data) %in% filtered_ids(), ]})
 
+    #observe(print(data.df.rv$filtered %>% reactiveValuesToList() %>% unlist()))
     # #filter reactive vals
     #   observeEvent(input$wriapicker, {
     #     output$message =   renderText(input$wriapicker)
@@ -292,7 +332,7 @@ filter_page_server <- function(id, rv) {
           c(
             # SWSID,
             WQBE_basin,
-            Imperviousness,
+          #  Imperviousness,
             Presence_of_Shellfish,
             Drains_to_P_Sensitive_Lake,
             Is_Headwater_Basin,
@@ -300,6 +340,7 @@ filter_page_server <- function(id, rv) {
           )
         )
     })
+
     output$hot = renderDT(
       display_table(),rownames = TRUE,server = FALSE
       #  style = "bootstrap5"options = list(dom = 'tp', scrollX = TRUE),
@@ -307,10 +348,54 @@ filter_page_server <- function(id, rv) {
        #DT::formatPercentage("Imperviousness", 0)
     )
 
+#      output$hot = renderDT(
+ #       display_table(),rownames = TRUE,server = FALSE
+        #  style = "bootstrap5"options = list(dom = 'tp', scrollX = TRUE),
+        #  extensions = 'Responsive'
+        #DT::formatPercentage("Imperviousness", 0)
+  #    )
 
-      #output$table_1 = renderDataTable(subbasin_metrics())
+#       renderReactable({
+#
+#       make_tf_icons <- function(value){
+#         ifelse(value, tagList(shiny::icon('check-circle',style = "color:#00A65A")),
+#                tagList(shiny::icon('minus-circle',class = "regular", style = "color:#dd4b39"),value))}
+#
+#         reactable(
+#           display_table(),
+#           defaultColDef = colDef(align = 'center')
+#           # columns = list(
+#           #   Presence_of_Shellfish = colDef(name = 'Presence of Shellfish', cell = function(value) {make_tf_icons(value)}),
+#           #   Drains_to_P_Sensitive_Lake = colDef(name = 'Drains to Phosphorus Sensitive Lake', cell = function(value) {make_tf_icons(value)}),
+#           #   Is_Headwater_Basin = colDef(name = 'Headwater Basin', cell = function(value) {make_tf_icons(value)}),
+#           #   Contains_Swimming_Beaches = colDef(name = 'Contains Swimming Beaches', cell = function(value) {make_tf_icons(value)})
+#           #   #   ifelse(value, tagList(shiny::icon('check-circle',style = "color:#00A65A")),
+#           #   #          tagList(shiny::icon('minus-circle',class = "regular", style = "color:#EB8D80")))
+#           #   #   }
+#           #
+#           #
+#           #
+#           # )
+#         )
+# })
 
-    #}
+
+
+    #   renderDT(
+    #   display_table(),
+    #   rownames = TRUE,
+    #   colnames <- c('WRIA','Presence of Shellfish', 'Drains to Phosphorus Sensitive Lake',
+    #                 'Headwater Basin','Contains Swimming Beaches'
+    #   )
+    #   #  style = "bootstrap5"options = list(dom = 'tp', scrollX = TRUE),
+    #   #  extensions = 'Responsive'
+    #   # DT::formatPercentage("Imperviousness", 0)
+    # )
+
+
+    # output$table_1 = renderDataTable(subbasin_metrics())
+
+    # }
 
     # count rows
     output$num_selected <- shiny::renderUI(
@@ -340,57 +425,54 @@ filter_page_server <- function(id, rv) {
       }
     )
 
-
-
-
-
-
-
-     output$map <- renderLeaflet({
-       leaflet(subbasin_shps) %>%
-         addProviderTiles("CartoDB.DarkMatter", group = "Dark") %>%
-         addProviderTiles("Esri.WorldGrayCanvas", group = "Grey") %>%
-         addProviderTiles("Esri.WorldImagery", group = "Satellite") %>%
-         addLayersControl(
-           position = "bottomright", options = layersControlOptions(collapsed = FALSE),
-           baseGroups = c("Grey", "Satellite", "Dark"),
-           overlayGroups = c("City Limits","base")
-         ) %>%
-         addPolygons(data = subbasin_shps,weight = 1, opacity = 0.6,
-                     color = "#9E9E9E",fillColor = "#d2d6de",
-                     group = "base", options = list(zIndex = 100)) %>%
-         addPolygons(data=cities_shp, group = "City Limits") %>%
-         hideGroup("City Limits")
+output$map <- renderLeaflet({
+      leaflet(subbasin_shps) %>%
+        addProviderTiles("Esri.OceanBasemap", group = "Dark") %>%
+        addProviderTiles("CartoDB.DarkMatter", group = "Base") %>%
+        addProviderTiles("Esri.WorldGrayCanvas", group = "Grey") %>%
+        addProviderTiles("Esri.WorldImagery", group = "Satellite") %>%
+        addLayersControl(
+          position = "bottomright", options = layersControlOptions(collapsed = FALSE),
+          baseGroups = c("Grey", "Satellite", "Dark"),
+          overlayGroups = c("City Limits", "base")
+        ) %>%
+        addPolygons(
+          data = subbasin_shps, weight = 1, opacity = 0.6,
+          color = "#9E9E9E", fillColor = "#d2d6de",
+          group = "base", options = list(zIndex = 100)
+        ) %>%
+        addPolygons(data = cities_shp, group = "City Limits") %>%
+        hideGroup("City Limits")
     })
 
     shps_filtered <- reactive({
-      #req(filtered_ids())
-      subbasin_shps[which(subbasin_shps$SWSID %in% filtered_ids()),]
+      # req(filtered_ids())
+      subbasin_shps[which(subbasin_shps$SWSID %in% filtered_ids()), ]
     })
 
     # map observers  -------------------------------------------------------
     #
-#proxy1
+    # proxy1
     observeEvent(display_table(), {
       leafletProxy("map") %>%
         clearGroup("selected_sheds") %>%
-        #clearGroup("base") %>%
+        # clearGroup("base") %>%
         # addPolygons(data = subbasin_shps, fillOpacity = 0.4,weight = 1,color = "#6c757d",
         #             fillColor = "grey",group = "base",  options = list(zIndex = 100)) %>%
-        addPolygons(data = shps_filtered(),weight=2.5,color="#28a745",
-                    fillColor = "#01ff70",
-                    group="selected_sheds",options = list(zIndex = 101)) #%>%
+        addPolygons(
+          data = shps_filtered(), weight = 2.5, color = "#28a745",
+          fillColor = "#01ff70",
+          group = "selected_sheds", options = list(zIndex = 101)
+        ) # %>%
     })
 
     observe({
-
       leafletProxy("map") %>%
         clearGroup("city_bounds") %>%
-        addPolygons(data = city_bounds(), dashArray = c("2, 2"), fillOpacity = 0.1, weight = 1.5, color = "black", group = "city_bounds",   options = list(zIndex = 200))
+        addPolygons(data = city_bounds(), dashArray = c("2, 2"), fillOpacity = 0.1, weight = 1.5, color = "black", group = "city_bounds", options = list(zIndex = 200))
+    }) %>% bindEvent(city_bounds(), ignoreInit = TRUE, ignoreNULL = TRUE)
 
-    }) %>% bindEvent(city_bounds(),ignoreInit = TRUE,ignoreNULL = TRUE)
-
-    #proxy2
+    # proxy2
     # observeEvent(display_table(), {
     #   if(length(city_vals()) != 0) {
     #     leafletProxy("map") %>%
@@ -410,7 +492,7 @@ filter_page_server <- function(id, rv) {
     #
     # }})
 
-  #proxy 3
+    # proxy 3
     # add city if selected
     # observe({
     #   if (length(city_vals()) != 0) {
@@ -463,7 +545,7 @@ filter_page_server <- function(id, rv) {
     # }) # %>% bindEvent(input$map)
     # debug -------------------------------------------------------------------
 
-
+    output$react <- renderText(rv$filtered %>% unlist())
     output$message <- renderText(c(
       # "headwaters",
       # headwaters(),
@@ -471,18 +553,21 @@ filter_page_server <- function(id, rv) {
       # swimming(),
       # "P lakes",
       # P_lakes(),
-      "filtered ids:",
-      filtered_ids(),
-      city_vals() %>% unlist(),
-      "merge:",
-      length(city_vals())))
+      "na values:",
+      sapply(data.df(), function(y) sum(length(which(is.na(y)))))
+      # "filtered ids:",
+      # filtered_ids(),
+      # city_vals() %>% unlist(),
+      # "merge:",
+      # length(city_vals())
+    ))
 
-      # spatial_filter_ids() %>% unlist(),
-      # "cities:"
-      #  city_bounds() %>% unlist()
-      # "rows selected",
-      # table_info()
-    df.toreturn <- reactive(data.df()) %>% bindEvent(input$save) #module returns filtered ids
+    # spatial_filter_ids() %>% unlist(),
+    # "cities:"
+    #  city_bounds() %>% unlist()
+    # "rows selected",
+    # table_info()
+    df.toreturn <- reactive(data.df()) %>% bindEvent(input$save) # module returns filtered ids
     return(df.toreturn)
     # End mod server ----------------------------------------------------------
   })

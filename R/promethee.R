@@ -47,7 +47,6 @@ promethee_2 <- function(dataset = NULL,
   }
 
   # handle nas: replaces column with zeros
-
   dataset[which(is.na(dataset %>% colSums()))] <- 0
 
   weighting <- weighting %>% make.matrix(n)
@@ -107,15 +106,14 @@ promethee_2 <- function(dataset = NULL,
   # )
 
 
-  # out_flows <- data.frame(
-  #   row.names = basins,
-  #   phi_plus = res[["outrankingFlowsPos"]],
-  #   phi_minus = res[["outrankingFlowsNeg"]]
-  # ) %>%
-  #   round(2) %>%
-  #   mutate(score = (phi_plus - phi_minus) %>%
-  #     round(digits = 2)) %>%
-  #   mutate(score_rank = min_rank(-score))
+  out_flows <- data.frame(
+    row.names = basins,
+    phi_plus = res[["PROMETHEE1"]][,1],
+    phi_minus = res[["PROMETHEE1"]][,2],
+    score = res[["PROMETHEE2"]]
+  ) %>%
+    round(2) %>%
+    mutate(score_rank = min_rank(-score))
 
   # if(!is.null(limit)){
   #   out_flows <- slice_min(score_rank,limit)
@@ -138,7 +136,18 @@ promethee_2 <- function(dataset = NULL,
 
   # make a ranking dataframe
   # pf2$rank <- min_rank(-pf2$score)
-
+  # pf2_outflows <-
+  #   data.frame(
+  #     row.names = basins,
+  #     phi_plus = res[1],
+  #     phi_minus = res[2]
+  #   ) %>%
+  #     round(2) %>%
+  #     mutate(score = (phi_plus - phi_minus) %>%
+  #              round(digits = 2)) %>%
+  #     mutate(score_rank = min_rank(-score)) %>% sig_figs()
+  #
+  res$out_flows <- out_flows
 
 
   #
@@ -146,7 +155,8 @@ promethee_2 <- function(dataset = NULL,
 }
 
 
-adjacency_matrix <- function(n, out_flows, i, j, basins) {
+adjacency_matrix <- function(out_flows, basins) {
+  n <- nrow(out_flows)
   adj_mat <- matrix(rep("U", n * n), n, n)
 
   for (i in 1:n) {
@@ -164,7 +174,7 @@ adjacency_matrix <- function(n, out_flows, i, j, basins) {
       } else if (a_pos > b_pos && a_neg == b_neg) {
         adj_mat[i, j] <- "P"
       } else if (a_pos == b_pos && a_neg == b_neg) {
-        adj_mat[i, j] <- "I1"
+        adj_mat[i, j] <- "I"
       } else if (a_pos > b_pos && a_neg > b_neg) {
         adj_mat[i, j] <- "R"
       } else if (a_pos < b_pos && a_neg < b_neg) {
@@ -199,4 +209,10 @@ adjacency_matrix <- function(n, out_flows, i, j, basins) {
 
   row.names(adj_mat) <- basins
   colnames(adj_mat) <- basins
+
+  return(adj_mat_numeric)
 }
+
+
+
+

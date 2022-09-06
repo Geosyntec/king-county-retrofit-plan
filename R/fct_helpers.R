@@ -327,3 +327,87 @@ plot_jittered_pref_flows <- function(pf2, adj_mat_numeric,name_col=NULL,toleranc
   #visIgraphLayout()
   return(plot.graph)
 }
+
+
+
+#' Orient Weights
+#'
+#' Changes weights to align with orientation of criteria
+#'
+#' @param weights vector of weights
+#' @param minmax vector of orientation
+#'
+#' @return a new vector with negative weights for "min" and postive weights for "max"
+#'
+
+orient_weights <- function(weights, minmax) {
+  if(length(weights) != length(minmax)) {
+    stop(paste(
+      "weights and minmax are different lengths",
+      "weights:",length(weights),
+      "minmax:",length(minmax)))
+  }else{
+    weights_orientation <-
+      minmax %>% replace(. == 'min', -1) %>% replace(. == 'max', 1) %>% as.numeric()
+    return(weights * weights_orientation)}
+}
+
+
+
+
+
+#' Weighted Sum
+#'
+#' Returns the highest ranked alternatives via a quick sort of weighted sum
+#' of weights and criteria
+#'
+#' @param performanceTable data.frame with criteria as columns, and alternative as rows
+#' alternative names should be contained in data.frame rownames. All columns should be numeric type
+#' @param weights
+#' @param num_to_return
+#'
+#' @return
+#' @export
+#'
+#' @examples
+scaled_weighted_sum <- function(performanceTable,weights,num_to_return=25){
+  #check that peformanceTable is all numeric
+  if(sapply(performanceTable, function(x) all(varhandle::check.numeric(x, na.rm=TRUE)))  %>% all()){
+    # handle nas: replaces column with zeros
+    #performanceTable[which(is.na(performanceTable %>% colSums()))] <- 0
+    if(is.null(num_to_return)){
+      n <- 25
+    } else {
+      n <- min(num_to_return,nrow(performanceTable))
+    }
+
+
+    scaled_vals <- normalizePT(performanceTable,"rescaling") %>% na.omit()
+    x <- MCDA::weightedSum(scaled_vals,weights) #%>% as.data.frame() #%>% top_n(25) %>% rownames()
+    top_ids <- tail(sort(x,method='quick'),n) %>% names()
+    table_out <- performanceTable[which(rownames(performanceTable) %in% top_ids) ,]
+    return(
+      table_out
+    )
+  } else {
+    stop("performance table is not all numeric")
+  }
+}
+
+
+
+
+#
+#
+#Testing
+
+performanceTable <- subbasin_data %>%  select_if(is.numeric) %>% na.omit()
+c <- ncol(performanceTable)
+n <- nrow(performanceTable)
+minmax <- sample(c('min','max'),c,replace = TRUE)
+weights <-runif(c, 0,5)
+
+weights_oriented <- orient_weights(weights,minmax)
+x <- scaled_weighted_sum(performanceTable, orient_weights(weights,minmax))
+print(apply(performanceTable, MARGIN = 1, function(x) sum(is.na(x))) %>% sum())
+
