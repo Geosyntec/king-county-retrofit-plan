@@ -468,7 +468,7 @@ criteria_page_server2 <- function(id, rv2) {
       values <- reactive(pf2_outflows()[["score"]])
 
       output$map <-
-        # req(rv2$filtered_shps)
+        #req(reactive(rv2$filtered_shps))
         # basins_selected = input$hot_rows_selected
         renderLeaflet({
           basemap %>%
