@@ -1,5 +1,19 @@
 library(leaflet)
 
+card_warning <- function(.num,.description){
+  HTML(
+    paste0(
+      '
+  <div class="card text-white bg-warning mb-3" style="max-width: 18rem;">
+    <div class="card-header">Header</div>
+      <div class="card-body">
+        <h5 class="card-title">Warning card title</h5>
+          <p class="card-text">Some quick example text to build on the card title and make up the bulk of the cards content.</p>
+  </div>
+</div>'))
+
+}
+
 card <- function(.num, .description) {
   HTML(
     paste0(
@@ -237,8 +251,8 @@ plot_jittered_pref_flows <- function(pf2, adj_mat_numeric,name_col=NULL,toleranc
   to_rank <- left_join(edges, pf2, by = c("to" = name_col))
 
   ranked_edges <- data.frame(edges,
-                             from_rank = from_rank$rank,
-                             to_rank = to_rank$rank
+                             from_rank = from_rank$score_rank,
+                             to_rank = to_rank$score_rank
   )
 
   cleaned_edges <- ranked_edges %>%
@@ -353,9 +367,6 @@ orient_weights <- function(weights, minmax) {
 }
 
 
-
-
-
 #' Weighted Sum
 #'
 #' Returns the highest ranked alternatives via a quick sort of weighted sum
@@ -370,22 +381,17 @@ orient_weights <- function(weights, minmax) {
 #' @export
 #'
 #' @examples
-scaled_weighted_sum <- function(performanceTable,weights,num_to_return=25){
+scaled_weighted_sum <- function(performanceTable,weights,n=25){
   #check that peformanceTable is all numeric
   if(sapply(performanceTable, function(x) all(varhandle::check.numeric(x, na.rm=TRUE)))  %>% all()){
-    # handle nas: replaces column with zeros
-    #performanceTable[which(is.na(performanceTable %>% colSums()))] <- 0
-    if(is.null(num_to_return)){
-      n <- 25
-    } else {
-      n <- min(num_to_return,nrow(performanceTable))
-    }
+    scaled_vals <- normalizePT(performanceTable,"rescaling") #%>% na.omit()
+    x <- MCDA::weightedSum(scaled_vals,weights) %>%
+      as.data.frame() %>% `colnames<-`('weighted_sum_score')#%>% as.data.frame() #%>% top_n(25) %>% rownames()
 
-
-    scaled_vals <- normalizePT(performanceTable,"rescaling") %>% na.omit()
-    x <- MCDA::weightedSum(scaled_vals,weights) #%>% as.data.frame() #%>% top_n(25) %>% rownames()
-    top_ids <- tail(sort(x,method='quick'),n) %>% names()
-    table_out <- performanceTable[which(rownames(performanceTable) %in% top_ids) ,]
+    table_out <- merge(x,performanceTable,by=0,all=TRUE) %>%
+      column_to_rownames('Row.names') %>%
+      arrange(desc(weighted_sum_score)) %>%
+      slice(1:n)
     return(
       table_out
     )
@@ -394,20 +400,138 @@ scaled_weighted_sum <- function(performanceTable,weights,num_to_return=25){
   }
 }
 
+make_numeric_inputs <- function(goals.df, id) {
+  ns <- NS(id)
+  tl <- tagList()
+  subset.df <- goals.df %>% select(Goal, Goal_Description) %>% unique() %>% arrange(Goal)
+  for (i in 1:nrow(subset.df)) {
+    goal_row <- subset.df[i, ]
+    goal_info <- paste0("Goal ", goal_row[1], ". ", goal_row[2], ":")
+    tl[[i]] <- tagList(fluidRow(
+      column(width = 12,
 
+        numericInput(
+          inputId = ns(paste0("goal", i)),
+          label = goal_info, value = 0, min = 0, max = 5, step = 1),#, minWidth = 150),
+      tagList(make_info("A weight of 0 indicates the metric will be ignored. Metrics with missing data are not used."))
+    )), if(i != nrow(goals.df)){hr()})
+  }
+  return(tl)
+}
 
+#' Remove nas from pt
+#'
+#' @param weights vector of weights
+#' @param pt dataframe of performance table
+#' @param dplyr
+#' @param select
+#' @param .
+#'
+#' @return dataframe of performance table, character vector of columns removed
+#' @export
+#'
+#' @examples
+remove_nas_from_pt<- function(pt.df) {
 
-#
+  # pt.df1 <-
+  #   pt.df %>% dplyr::select(-all_of(metrics_to_remove))
+
+  #find which columns have na values
+  na_cols <-pt.df %>%
+   dplyr::select_if(~ any(is.na(.))) %>% colnames()
+
+  cleaned_pt <- pt.df %>% dplyr::select(-all_of(na_cols))
+#to do remove cols from pt
+  return(list("cleaned_pt" = cleaned_pt, "na_cols" = na_cols))
+}
+
+clean_mcda_inputs <- function(ex_user_metrics,na_cols=NULL){
+
+  #ex_user_metrics<- ex_user_metrics %>% column_to_rownames("Name")
+  # zero.weights <- ex_user_metrics %>% dplyr::filter(Weight == 0) %>%
+  #   dplyr::pull("Criteria Name")
+  cleaned.df <- ex_user_metrics %>% dplyr::filter(
+    !`Criteria_Name` %in% na_cols)
+
+  return(cleaned.df)
+}
+
 #
 #Testing
+#
+# performanceTable <- subbasin_data %>%  select_if(is.numeric) %>% na.omit() %>% head(30)
+# c <- ncol(performanceTable)
+# n <- nrow(performanceTable)
+# minmax <- sample(c('min','max'),c,replace = TRUE)
+# weights <-runif(c, 0,5)
+#
+# weights_oriented <- orient_weights(weights,minmax)
+# x <- scaled_weighted_sum(performanceTable, weights_oriented)
+# print(apply(performanceTable, MARGIN = 1, function(x) sum(is.na(x))) %>% sum())
+#
+#
+# promethee_2(dataset = x %>% select(-weighted_sum_score),minmax = minmax)
+#
+# aa <- clean_mcda_inputs(ex_user_metrics %>% mutate(`Criteria Name` = Criteria_Name))
+# bb <- remove_nas_from_pt(pt.df = pt, metrics_to_remove = aa$zero.weights %>% as.character())
+# cc <- aa$zero.weights
+# dd <- bb$removed_columns
+#
+# #test zero weights
+# AA <- ex_user_metrics %>%
+#   mutate(`Criteria Name` = Criteria_Name) %>%
+#   mutate(Weight=0) %>% clean_mcda_inputs()
+#
+# BB <- remove_nas_from_pt(pt.df = pt, metrics_to_remove = AA$zero.weights)
+#normalizePT(performanceTable = subbasin_data)
 
-performanceTable <- subbasin_data %>%  select_if(is.numeric) %>% na.omit()
-c <- ncol(performanceTable)
-n <- nrow(performanceTable)
-minmax <- sample(c('min','max'),c,replace = TRUE)
-weights <-runif(c, 0,5)
+mcda_scatter<-function(df){
+  df |> rownames_to_column("SWSID") %>%
+    # group_by(score) %>%
+    e_charts(phi_minus) |>
+    e_scatter(serie = phi_plus,size = score,bind=SWSID) |>
+    e_x_axis(inverse=TRUE) |>
+    #e_axis(axis = c('x','y'), show=FALSE) %>%
+    e_tooltip(
+      formatter = htmlwidgets::JS("
+      function(params){
+        return('<strong>' + params.name +
+                '</strong><br />ϕ+ ' + params.value[0] +
+                '<br />ϕ- ' + params.value[1] +
+                '<br />score: ' + params.value[2])
+                }
+    ")) %>%
+    #e_toolbox("dataView") %>%
+    e_legend(FALSE) %>%  # hide legend
+    e_mark_line(data = list(xAxis = 0), title = "Φ+ (Relative Strength)",
+                label = list(position = "middle")) %>%
+    e_title("Relative Scores",subtext = "Larger circles denote better performing alternatives") |>  # Add title & subtitle
+    e_mark_line(data = list(yAxis = 0), title = "Φ- (Relative Weakness)",  label = list(position = "middle")) %>%
+    e_visual_map(score,dimension=2,
+                 inRange = list(color = king_co_palette)) %>%
+    e_toolbox_feature(c("saveAsImage","magicType","dataView"))
+}
 
-weights_oriented <- orient_weights(weights,minmax)
-x <- scaled_weighted_sum(performanceTable, orient_weights(weights,minmax))
-print(apply(performanceTable, MARGIN = 1, function(x) sum(is.na(x))) %>% sum())
+
+get_pretty_names <- function(vals){
+  return_vec <- vector()
+  for (i in 1:length(vals)) {
+    return_vec <- c(return_vec,metrics$Pretty_name[which(metrics$Name == vals[i])])
+
+  }
+  return(return_vec)
+  #tibble(Name = vals) %>% left_join(metrics) %>% pull(Pretty_name)
+}
+make_info <- function(words){
+  shinyWidgets::dropdownButton(
+    size = "xs",
+    inputId = "mydropdown",
+    label = 'more info', #NULL,
+    #icon = "info",
+    status = "light",
+    circle = FALSE,
+    helpText(words)
+  )}
+# aaa <- metrics %>% sample_n(2) %>% pull(Name)
+# aaa %>% get_pretty_names()
 

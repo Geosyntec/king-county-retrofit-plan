@@ -10,6 +10,16 @@ metrics <- read_csv(here("data-raw","metrics_config.csv"),
   mutate(orientation_restore = case_when(orientation_restore == "Minimize" ~ "min",
                                          orientation_restore == "Maximize" ~ "max"))
 
+#calculate the mean value for each metric
+load("~/Documents/repos/king-county-retrofit-plan/data/subbasin_data.rda")
+
+mean_data <- subbasin_data %>% select_if(is.numeric) %>% colMeans(na.rm = TRUE) %>%
+  as.data.frame() %>%
+  `colnames<-`("Indifference_abs") %>%
+  rownames_to_column("Name")
+# multiply threshold times mean value
+metrics <- mean_data %>% as.data.frame() %>% merge(metrics)
+
 
 #metrics <- set_names(metrics,goal_names)
 #>

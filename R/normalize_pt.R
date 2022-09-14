@@ -56,7 +56,10 @@ rescaling <- function(data){
   max <- max(data)
   min <- min(data)
   data <- (data-min)/(max-min)
-  return(data)
+  if(!is.finite(data %>% sum())){
+    return(0)
+  } else {
+  return(data)}
 }
 
 standardization <- function(data){

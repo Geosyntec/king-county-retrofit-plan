@@ -11,24 +11,28 @@ sf_use_s2(FALSE)
 subbasin_shps <- sf::read_sf(here::here(
   "data-raw/source_data",
   "Subwatershed_Metrics_Complete_Export.shp"
-))%>% st_zm() %>% st_transform("EPSG:4326")# %>% column_to_rownames("SWSID") %>%
-  #sf::st_as_sf()
+)) %>%
+  st_zm() %>%
+  st_transform("EPSG:4326") # %>% column_to_rownames("SWSID") %>%
+
 
 base_crs <- subbasin_shps %>% st_crs()
 
 ## simplify shapes
 
 
-subbasin_simplified <- ms_simplify(subbasin_shps, keep = 0.10,
-                                keep_shapes = FALSE) %>% st_set_crs(base_crs)
+subbasin_simplified <- ms_simplify(subbasin_shps,
+  keep = 0.10,
+  keep_shapes = FALSE
+) %>% st_set_crs(base_crs)
 
-#test loading time.
+# test loading time.
 # system.time({
 #   leaflet(subbasin_simplified) %>% addPolygons()
 # })
-subbasin_shps<- subbasin_simplified %>% select(c(SWSID, geometry))
+subbasin_shps <- subbasin_simplified %>% select(c(SWSID, geometry))
 
-usethis::use_data(subbasin_shps,overwrite = TRUE)
+usethis::use_data(subbasin_shps, overwrite = TRUE)
 
 # subbasin metrics --------------------------------------------------------
 subbasin_metrics <- read_excel("data-raw/source_data/20220722_KC_SPS_Complete_Metrics_Join_Only.xls") %>%
@@ -41,7 +45,8 @@ subbasin_metrics <- read_excel("data-raw/source_data/20220722_KC_SPS_Complete_Me
       "Contains_Swimming_Beaches"
     ),
     as.logical
-  ) %>% column_to_rownames("SWSID")
+  ) %>%
+  column_to_rownames("SWSID")
 
 usethis::use_data(subbasin_metrics, overwrite = TRUE)
 
@@ -60,10 +65,10 @@ usethis::use_data(subbasin_metrics, overwrite = TRUE)
 #   dplyr::select(c(CITYNAME))%>% st_set_crs(base_crs) #%>% st_cast('MULTIPOLYGON')
 
 cities_shp <-
-sf::read_sf(here::here(
-  "data-raw/source_data",
-  "King_Co_Incorporated_Areas_Dissolved.shp"
-))
+  sf::read_sf(here::here(
+    "data-raw/source_data",
+    "King_Co_Incorporated_Areas_Dissolved2.shp"
+  ))
 
 city_names <- cities_shp %>%
   sf::st_drop_geometry() %>%
@@ -71,5 +76,3 @@ city_names <- cities_shp %>%
 
 usethis::use_data(cities_shp, overwrite = TRUE)
 usethis::use_data(city_names, overwrite = TRUE)
-
-

@@ -1,10 +1,20 @@
-
-source(here::here('R','aaa_global.R'))
-
 debugUI <- function(id) {
   ns <- NS(id)
   tagList(
-  verbatimTextOutput(ns('table'))
+ # tableOutput(ns('OUT1')),
+    shinydashboardPlus::box(
+      width = 12,
+      leafletOutput(ns("map"))
+      ),
+  shinydashboardPlus::box(
+    width = 12, title = "shps Table", collapsible = TRUE,
+  DTOutput(ns('filtered_shps'))
+  ),
+  shinydashboardPlus::box(
+    width = 12, title = "Filtered Table", collapsible = TRUE,
+    DTOutput(ns('filtered_data_table'))
+  ),
+
   )
 }
 
@@ -12,24 +22,39 @@ debugServer <- function(id,rv) {
   moduleServer(
     id,
     function(input, output, session) {
-    filtered <- reactive(rv$base_data)
+      output$map <- renderLeaflet(leaflet(rv$filtered_shps) %>% addPolygons)
+      output$base_data_table <- renderDT(DT::datatable(rv$filtered_shps,
+                                                       extensions = 'FixedColumns',
+                                                       options = list(
+                                                         dom = 't',
+                                                         scrollX = TRUE
 
-      output$table <- renderPrint(filtered$data)
+                                                       )
+                                         ))
+      output$filtered_data_table <- renderDT(DT::datatable(rv$filtered_data,
+                                                           extensions = 'FixedColumns',
+                                                           options = list(
+                                                             dom = 't',
+                                                             scrollX = TRUE
 
-    }
-  )
-}
+                                                           )
+      ))
 
+})}
 library(shiny)
 
 ui <- fluidPage(
-  debugUI("test")
+  #theme = bs_theme(bg = "black", fg = "white"),
+debugUI('test')
 )
 
 server <- function(input, output, session) {
-  rv <- reactiveValues(base_data = subbasin_data) #, basin_ids = subbasin_metrics %>% rownames())
-
-  debugServer("test",rv)
+  rv <- reactiveValues(
+    base_data = subbasin_data %>% na.omit(),
+    filtered_data = subbasin_data %>% na.omit() %>% head(),
+    filtered_shps = subbasin_shps
+  )
+  debugServer("test", rv)
 }
+shinyApp(ui, server)# %>% run_with_themer()
 
-shinyApp(ui, server)

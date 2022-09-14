@@ -47,7 +47,7 @@ promethee_2 <- function(dataset = NULL,
   }
 
   # handle nas: replaces column with zeros
-  dataset[which(is.na(dataset %>% colSums()))] <- 0
+  #dataset[which(is.na(dataset %>% colSums()))] <- 0
 
   weighting <- weighting %>% make.matrix(n)
 
@@ -83,8 +83,8 @@ promethee_2 <- function(dataset = NULL,
   gaussP <- gaussP %>% make.matrix(n)
 
   # handle nas: replaces column with zeros
-  na_cols <- (is.na(dataset %>% colSums()))
-  dataset[which(is.na(dataset %>% colSums()))] <- 0
+  #na_cols <- (is.na(dataset %>% colSums()))
+  #dataset[which(is.na(dataset %>% colSums()))] <- 0
 
   res <- PROMETHEE(dataset = dataset,
                    PreferenceF = PreF,
