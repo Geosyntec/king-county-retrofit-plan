@@ -1,5 +1,5 @@
 library(leaflet)
-
+load(here::here("data", "metrics.rda"))
 card_warning <- function(.num,.description){
   HTML(
     paste0(
@@ -413,11 +413,18 @@ make_numeric_inputs <- function(goals.df, id) {
         numericInput(
           inputId = ns(paste0("goal", i)),
           label = goal_info, value = 0, min = 0, max = 5, step = 1),#, minWidth = 150),
-      tagList(make_info("A weight of 0 indicates the metric will be ignored. Metrics with missing data are not used."))
+
+
+        div(style="display: inline-block;vertical-align:top;;",goals_table(i)),
+
+
+
     )), if(i != nrow(goals.df)){hr()})
   }
   return(tl)
 }
+
+
 
 #' Remove nas from pt
 #'
@@ -516,7 +523,14 @@ mcda_scatter<-function(df){
 get_pretty_names <- function(vals){
   return_vec <- vector()
   for (i in 1:length(vals)) {
-    return_vec <- c(return_vec,metrics$Pretty_name[which(metrics$Name == vals[i])])
+    if(vals[i] %in% metrics$Name){
+      #if in list, replace with new name
+      newnm <- metrics$Pretty_name[which(metrics$Name == vals[i])]
+    }else{
+      #else use old name
+      newnm <- vals[i]
+    }
+    return_vec <- c(return_vec,newnm)
 
   }
   return(return_vec)
@@ -532,6 +546,28 @@ make_info <- function(words){
     circle = FALSE,
     helpText(words)
   )}
-# aaa <- metrics %>% sample_n(2) %>% pull(Name)
-# aaa %>% get_pretty_names()
+
+goals_table <- function(goal_num=1){
+ goal.table <-  metrics %>% dplyr::filter(Goal == goal_num) %>%
+    mutate(Goal = paste0(Goal, ". ", Goal_Description)) %>%
+    mutate(Subgoals = paste(Subgoal, Subgoal_Description)) %>%
+    mutate(Metrics = Pretty_name) %>%
+    dplyr::select(c(Subgoals,Metrics)) %>%
+    dplyr::arrange(Subgoals, Metrics) %>%
+    reactable(
+      groupBy = c("Subgoals"),
+      bordered = TRUE
+    )
+
+ return( shinyWidgets::dropdownButton(
+   size = "xs",
+   inputId = "mydropdown",
+   label = 'show subgoals & metrics', #NULL,
+   #icon = "info",
+   status = "light",
+   circle = FALSE,
+   width = 500,
+  goal.table))
+
+}
 

@@ -13,6 +13,8 @@ require(reactable)
 require(tidyr)
 require(shinyjs)
 require(fresh)
+require(shinyvalidate)
+
 
 load(here::here("data", "subbasin_data.rda"))
 load(here::here("data", "subbasin_shps.rda"))
@@ -28,10 +30,11 @@ goals <- metrics %>% select(Goal, Goal_Description, Subgoal, Subgoal_Description
 project_crs <- st_crs(subbasin_shps)
 
 basemap <- leaflet() %>%
-  addProviderTiles("Esri.OceanBasemap", group = "Base") %>%
+  addProviderTiles("CartoDB.Voyager", group = "Base") %>%
   # addProviderTiles("CartoDB.DarkMatter", group = "Base") %>%
   addProviderTiles("Esri.WorldGrayCanvas", group = "Grey") %>%
   addProviderTiles("Esri.WorldImagery", group = "Satellite")
+
 
 king_co_palette <- c("#FFE39F", "#B2CB9A", "#6FB084", "#3B925D", "#1D7324")
 
@@ -53,8 +56,7 @@ kingco_theme <- fresh::create_theme(
 
 #set default otptions for datables
 options(DT.options = list(
-  scrollX = TRUE,
-  fixedColumns = TRUE,
+  scrollX = TRUE,digits=2,
   dom = "tlprBi",
   buttons = c('copy', 'csv', 'excel', 'pdf', 'print')
 ))

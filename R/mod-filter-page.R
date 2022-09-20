@@ -118,7 +118,7 @@ filter_page_UI <- function(id) {
                 icon = icon("undo"), width = "90%"
               ),
               shiny::actionButton(ns("save"),
-                label = "Save Subbasins",
+                label = "Save and Proceed",
                 class = "btn btn-primary",
                 style = "color:white", icon = icon("check"), width = "90%"
               )
@@ -375,9 +375,9 @@ basemap %>%
     # map observers  -------------------------------------------------------
     #
     # proxy1
-    observeEvent(display_table(), {
+    observeEvent(filtered_ids(), {
       leafletProxy("map") %>%
-        clearGroup("selected_sheds") %>%
+        clearGroup("Selected Subbasins") %>%
         addPolygons(
           data = shps_filtered(), weight = 2.5, color = "#28a745",
           fillColor = "#01ff70",
@@ -396,6 +396,22 @@ basemap %>%
         addPolygons(data = city_bounds(), dashArray = c("2, 2"), fillOpacity = 0.1,
                     weight = 1.5, color = "black", group = "city_bounds", options = list(zIndex = 200))
     }) %>% bindEvent(city_bounds(), ignoreInit = TRUE, ignoreNULL = TRUE)
+
+# Click events ------------------------------------------------------------
+
+    observeEvent(input$map_shape_click, {
+
+      #capture the info of the clicked polygon
+      click <- input$map_shape_click
+
+      #subset your table with the id of the clicked polygon
+      #selected <- filtered_ids[mydata$myID == click$id,]
+
+      #if click id isn't null render the table
+      if(!is.null(click$id)){
+       print(click$id)
+        }
+      })
 
 
 

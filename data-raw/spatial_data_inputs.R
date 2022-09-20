@@ -68,11 +68,12 @@ cities_shp <-
   sf::read_sf(here::here(
     "data-raw/source_data",
     "King_Co_Incorporated_Areas_Dissolved2.shp"
-  ))
+  )) %>%  mutate(CITYNAME = if_else(CITYNAME == "King County",  "King County (Unincorporated)", CITYNAME))
+
 
 city_names <- cities_shp %>%
   sf::st_drop_geometry() %>%
-  distinct()
+  distinct() %>% arrange(CITYNAME) %>% pull(CITYNAME) %>% recode("King County" = "King County (Unincorporated)")
 
 usethis::use_data(cities_shp, overwrite = TRUE)
 usethis::use_data(city_names, overwrite = TRUE)

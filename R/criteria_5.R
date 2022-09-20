@@ -45,8 +45,10 @@ criteria_page_UI2 <- function(id) {
           width = NULL,
           title = "Criteria Weights", solidHeader = TRUE, status = "primary",
           helpText("Enter your preferred weight as a whole number between 0 and 5."),
-
+          make_info("A weight of 0 indicates the metric will be ignored. Metrics with missing data are not used."),
+          hr(),
           make_numeric_inputs(goals, id),
+
           #
           column(
             width = 12,
@@ -102,7 +104,9 @@ shinyWidgets::panel(
 
 #additional tables
 
-  box(solidHeader = TRUE, status = "primary",width = NULL,
+  box(solidHeader = TRUE, status = "primary",width = NULL,label = boxLabel(
+    "In development",status='warning'
+  ),
     title = "Additional Tables",collapsible = TRUE, closable = FALSE,
 
     collapsed = TRUE,
@@ -155,9 +159,13 @@ criteria_page_server2 <- function(id, rv2) {
           solidHeader = TRUE,
           collapsible = FALSE,
           tagList(
-            strong("The following criteria are not being used:"), br(),
+            "Metrics are incomplete for some subbasins. The following metrics have been removed from this analysis: ", br(),
             br(),
-            HTML(paste(na_cols() %>% get_pretty_names(), collapse = "<br>"))
+            #HTML('<ul class="list-group>'),
+            HTML("<li class='list-group-item'>"),
+            HTML(paste(na_cols() %>% get_pretty_names(),
+                       collapse = "<li class='list-group-item'>")),
+           # HTML('</ul>')
           )
           # actionLink(ns('view_missing'),label = 'Click to view')
         )
@@ -261,6 +269,16 @@ criteria_page_server2 <- function(id, rv2) {
       }) # %>% # %>% add_column(Include = TRUE,.before=1) %>%
 
       # Get user weights ----------------------------------------------------------
+
+
+      #validator for weights
+
+      iv <- InputValidator$new()
+      iv$add_rule("goal1",sv_between(0,5))
+      iv$add_rule("goal2",sv_between(0,5))
+      iv$add_rule("goal3",sv_between(0,5))
+      iv$add_rule("goal4",sv_between(0,5))
+      iv$enable()
       user_weights.df <- reactive({
         # req(user_weights())
         data.frame(
@@ -381,13 +399,15 @@ criteria_page_server2 <- function(id, rv2) {
 #additional tables
       output$top_basins <- renderDT(
         datatable(
-          top_PT(),
+
+          top_PT() %>% sig_figs(3),
+          colnames = colnames(top_PT()) %>% get_pretty_names(),
           extensions = c("Buttons","FixedColumns") ,
           options = list(
             scrollX = TRUE,
             fixedColumns = TRUE,
             dom = "tiplrB",
-          buttons = c('copy', 'csv', 'excel', 'pdf', 'print')
+          buttons = c('copy', 'csv', 'excel')
           )
         )
       )
@@ -441,16 +461,53 @@ criteria_page_server2 <- function(id, rv2) {
 
 
 
+# Reactable table ---------------------------------------------------------
+
+
+      # Render a bar chart in the background of the cell
+      bar_style <- function(width = 1, fill = "#e6e6e6", height = "75%",
+                            align = c("left", "right"), color = NULL) {
+        align <- match.arg(align)
+        if (align == "left") {
+          position <- paste0(width * 100, "%")
+          image <- sprintf("linear-gradient(90deg, %1$s %2$s, transparent %2$s)", fill, position)
+        } else {
+          position <- paste0(100 - width * 100, "%")
+          image <- sprintf("linear-gradient(90deg, transparent %1$s, %2$s %1$s)", position, fill)
+        }
+        list(
+          backgroundImage = image,
+          backgroundSize = paste("100%", height),
+          backgroundRepeat = "no-repeat",
+          backgroundPosition = "center",
+          color = color
+        )
+      }
+
+
+
+
 
       output$tbl2 <- renderReactable(
+
         reactable(
           mcda_results()[["out_flows"]] %>%
             rownames_to_column("SWSID") %>%
             relocate(score_rank, .before = 1),
+          columns = list(
+            score = colDef(
+              style = function(value) {
+                bar_style(width = value / 1, fill = "#2c5e77", color = "#fff")
+              },
+              align = "left",
+              format = colFormat(digits = 1)
+            )
 
+          ),
+          bordered = TRUE
         )
-
       )
+
 
 
       pf2_outflows <- reactive(mcda_results()[["out_flows"]])
@@ -467,21 +524,29 @@ criteria_page_server2 <- function(id, rv2) {
 
       values <- reactive(pf2_outflows()[["score"]])
 
+      map.pal.fun <- reactive((colorBin(king_co_palette, values(), 5, pretty = TRUE, reverse = FALSE)))
+
+      pal.rev.fun <- reactive((colorBin(king_co_palette, values(), 5, pretty = TRUE, reverse = TRUE)))
+
       output$map <-
         #req(reactive(rv2$filtered_shps))
         # basins_selected = input$hot_rows_selected
         renderLeaflet({
           basemap %>%
+
             addLayersControl(
-              position = "bottomright", options = layersControlOptions(collapsed = FALSE),baseGroups = c("Base", "Satellite", "Grey")
+              position = "bottomright", options = layersControlOptions(collapsed = FALSE),baseGroups = c("Base", "Satellite", "Grey"),
+              overlayGroups = c("City Limits")
 
             ) %>%
-            addPolygons(
+            addPolygons(color = "#28a745",
               data = rv2$filtered_shps,
               fillOpacity = 0.2, opacity = 0.8,
-              color = "grey",
+              fillColor = "grey",
               weight = 0.4
-            )
+            ) %>%
+            addPolygons(data = cities_shp, group = "City Limits") %>%
+            hideGroup("City Limits")
         })
 
 
@@ -496,10 +561,15 @@ criteria_page_server2 <- function(id, rv2) {
           leaflet::removeControl("legend") %>%
           addPolygons(
             data = top_shps(), group = "top_sheds",
-            label = ~SWSID,
-            labelOptions = list(
-              permanent = FALSE, opacity = 0.8
-            ),
+            label = ~score_rank,
+            labelOptions = labelOptions(
+              noHide = TRUE, textOnly = TRUE,
+              permanent = TRUE,
+              style = list(
+                color="black",
+textShadow ="0 0 4px white, 0 0 4px white, 0 0 4px white, 0 0 4px white, 0 0 4px white, 0 0 4px white, 0 0 4px white, 0 0 4px white, 0 0 4px white, 0 0 4px white, 0 0 4px white, 0 0 4px white, 0 0 4px white, 0 0 4px white, 0 0 4px white, 0 0 4px white, 0 0 4px white, 0 0 4px white, 0 0 4px white, 0 0 4px white"
+                                        )
+),
             weight = 1,
             color = "white",
             opacity = 1,

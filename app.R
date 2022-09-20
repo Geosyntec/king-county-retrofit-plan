@@ -1,27 +1,22 @@
 load(here::here("data", "subbasin_data.rda"))
 
 #palette for maps and charts
-
-
 #theme colors
 # Create the theme
 
-
+file.info('app.R')$ctime %>% as.Date()
 
 landingpage_ui <- function(go_button,learn_button) {
-
-
-
   tagList(HTML(
     paste0(
       '<div class="jumbotron">
   <h1 class="display-4">King County Stormwater Retrofit Planner</h1>
-  <p class="lead">This is a simple hero unit, a simple jumbotron-style component for calling extra attention to featured content or information.</p>
-  <hr class="my-4">
-  <p>It uses utility classes for typography and spacing to space content out within the larger container.</p>
-  <p class="lead">'),
-      '</p>
-  </div>'),
+  <p class="lead"> Multi-Criteria Decision Support System for Stormwater Retrofits.</p></lead>
+
+  <br>
+
+  <small><samp> Updated: ',file.info('app.R')$ctime %>% as.Date(),' </samp></small>'),
+      '</div>'),
     go_button,learn_button
   )
 }
@@ -37,9 +32,18 @@ about_ui <- function(){
 }
 
 ui <-
-  shinydashboard::dashboardPage(
+  shinydashboardPlus::dashboardPage(
+    header=dashboardHeader(
+      # These are examples of new widgets to perhaps include
+      #leftUi = tagList(
+      #dropdown(label= "dropdown"),
+      #dropdownBlock(badgeStatus = "primary",
+      #  id = 'block', icon = icon("table"),title = "block")),
+       #                      controlbarIcon = icon('table')),
+),
+        #=
 
-    header = shinydashboard::dashboardHeader(),
+
     sidebar = shinydashboardPlus::dashboardSidebar(
       sidebarMenu(id = 'tabs',
        menuItem("Home",tabName = "lp"),
@@ -62,7 +66,13 @@ ui <-
         # tabItem("Debug",debugUI("main"))
 
         )
-      ))
+      ),
+footer  = dashboardFooter(
+  right = paste0(
+   "Copyright © ", Sys.Date() %>% lubridate::year(), " Geosyntec Consultants, Inc."),
+)
+
+)
 
 server <- function(input, output, session) {
 
@@ -78,7 +88,7 @@ server <- function(input, output, session) {
 
   rv <- reactiveValues(base_data = subbasin_data,filtered_data = NULL,filtered_shps=NULL, top_basins = NULL, top_shps = NULL)
   #mock_filtered <- reactive(subbasin_data %>% filter(WQBE_basin ==    "White")) #%>% sample_n(100))
-  rv2 <- reactiveValues(filtered_data = NULL,top_basins = NULL,filtered_shps=NULL,  top_basins = NULL, top_shps = NULL)
+  rv2 <- reactiveValues(filtered_data = subbasin_data %>% select_if(is.numeric),top_basins = NULL,filtered_shps=subbasin_shps,  top_basins = NULL, top_shps = NULL)
   # filtered_results <-
   #filtered_results <- reactive
   filtered_data <- reactive(filter_page_server("filter-main",rv))
