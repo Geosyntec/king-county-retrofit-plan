@@ -512,7 +512,15 @@ mcda_scatter<-function(df){
     e_legend(FALSE) %>%  # hide legend
     e_mark_line(data = list(xAxis = 0), title = "Φ+ (Relative Strength)",
                 label = list(position = "middle")) %>%
-    e_title("Relative Scores",subtext = "Larger circles denote better performing alternatives") |>  # Add title & subtitle
+    e_title("Relative Scores") %>%
+    #         subtext =
+    #           "Larger-sized circles denote higher-scoring subbasins.
+    #         Higher position on the y-axis denotes subbasins with relatively
+    #         more strengths than other subbasins,
+    #         while lower (leftmost) positions on the x-axis denotes
+    #         subbasins with relatively more weakness than other subbasins.
+    #         See the full tally of metric scores
+    #         in the downloadable csv file.") |>  # Add title & subtitle
     e_mark_line(data = list(yAxis = 0), title = "Φ- (Relative Weakness)",  label = list(position = "middle")) %>%
     e_visual_map(score,dimension=2,
                  inRange = list(color = king_co_palette)) %>%

@@ -26,6 +26,7 @@ source(here::here("R", "promethee.R"))
 source(here::here("R", "normalize_pt.R"))
 source(here::here("R", "fct_helpers.R"))
 
+storymap_url <- 'https://storymaps.arcgis.com/stories/da6688d548a44aea8171222b6d3ce5b7'
 goals <- metrics %>% select(Goal, Goal_Description, Subgoal, Subgoal_Description, Name) %>% unique()
 project_crs <- st_crs(subbasin_shps)
 

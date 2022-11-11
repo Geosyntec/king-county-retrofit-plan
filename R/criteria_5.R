@@ -35,9 +35,13 @@ criteria_page_UI2 <- function(id) {
             selected = "Restoration",
             inline = FALSE
           ),
-          make_info("Choose whether prioritization should focus on Restoration
-                  or Protection. Restoration will priortize areas in need of improvement,
-                   while Protection will proritize high functioning locations.")
+          make_info(
+            tagList(
+            "Choose whether prioritization should focus on Restoration or Protection. Restoration will prioritize areas in need of improvement, while Protection will prioritize high functioning locations.",
+            br(),
+            a(tagList("See the StoryMap for more info", icon('external-link-alt'))
+                      ,href=storymap_url))
+)
         ),
         ### box 1b -------------------------------------------------------------------
 
@@ -91,8 +95,24 @@ shinyWidgets::panel(
 
         fluidRow(
           column(width = 6,
-          shinyWidgets::panel(shinycssloaders::withSpinner(
-          echarts4rOutput(ns("scatter_chart"))))),
+          shinyWidgets::panel(id=ns('pan'),
+
+                              dropdownButton(size = 'xs',
+                                             inputId = "mydropdown",
+                                             icon = icon("question"),
+                                             #status = "info",
+                                             label = "labellll",
+                                             tooltip = TRUE,
+                                             circle = TRUE,
+                                             helpText(' "Larger-sized circles denote higher-scoring subbasins. Higher position on the y-axis denotes subbasins with relatively more strengths than other subbasins, while lower (leftmost) positions on the x-axis denotes subbasins with relatively more weakness than other subbasins. See the full tally of metric scores in the downloadable csv file.')
+                              ),
+              shinycssloaders::withSpinner(
+
+          echarts4rOutput(ns("scatter_chart"))
+          )
+          )
+
+          ),
           column(width = 6,
           shinyWidgets::panel(
               shinycssloaders::withSpinner(DTOutput(ns("mcda_results"))))
@@ -159,7 +179,7 @@ criteria_page_server2 <- function(id, rv2) {
           solidHeader = TRUE,
           collapsible = FALSE,
           tagList(
-            "Metrics are incomplete for some subbasins. The following metrics have been removed from this analysis: ", br(),
+            "Only metrics with available data for all selected subbasins (Pre-Screening tab) are analyzed. The following metrics have been discarded due to missing data:", br(),
             br(),
             #HTML('<ul class="list-group>'),
             HTML("<li class='list-group-item'>"),

@@ -7,29 +7,73 @@ load(here::here("data", "subbasin_data.rda"))
 file.info('app.R')$ctime %>% as.Date()
 
 landingpage_ui <- function(go_button,learn_button) {
-  tagList(HTML(
-    paste0(
-      '<div class="jumbotron">
-  <h1 class="display-4">King County Stormwater Retrofit Planner</h1>
-  <p class="lead"> Multi-Criteria Decision Support System for Stormwater Retrofits.</p></lead>
+  backgroundImageCSS <- "height: 91vh;
+                       background-position: right;
+                       background-repeat: no-repeat;
+                       background-size: cover;
+                       background-image: url('%s');
+                       "
+  titleCSS <- "class: page-header;
+  "
+  tagList(
+fluidRow(
+  column(
+    width = 6,style = 'class: page-header',
+   absolutePanel(style = "height: 91vh;",box(width = 12,
+                                           style = "height: 91vh;",
 
-  <br>
 
-  <small><samp> Updated: ',file.info('app.R')$ctime %>% as.Date(),' </samp></small>'),
-      '</div>'),
-    go_button,learn_button
-  )
+
+ h1("King County Stormwater Retrofit Planner",style = "font-size: 5rem;
+    font-weight: 600; line-height: 1.2;
+    $font-family-sans-serif:
+  // Cross-platform generic font family (default user interface font)
+  system-ui,
+  // Safari for macOS and iOS (San Francisco)
+  -apple-system,
+  // Windows
+  'Segoe UI',!default;"),
+
+  h1("Multi-Criteria Decision Support System for Stormwater Retrofits",
+     style = "
+     margin-bottom: 1.6rem;
+     font-size: 2rem;
+    font-weight: 300;
+    $font-family-sans-serif:
+  // Cross-platform generic font family (default user interface font)
+  system-ui,
+  // Safari for macOS and iOS (San Francisco)
+  -apple-system,
+  // Windows
+  'Segoe UI',!default;"
+     ),
+
+  br(),
+    #HTML(
+ #    paste0(
+ #      '<small><samp> Updated: ',file.info('app.R')$ctime %>% as.Date(),' </samp></small>'),
+ #      '</div>')
+ # #),
+    go_button,learn_button))),
+  column(width = 6,
+        box(width = 12,
+tags$img(src='img1.jpeg',style="height: 100%;")))
+         #style = sprintf(backgroundImageCSS, "img1.jpeg")
+#
+
+    ))
 }
 
-about_ui <- function(){
-  #shinyWidgets::setBackgroundColor(color = "#194663")
-  tagList(HTML(
-    paste0(
-  '<div class="embed-responsive embed-responsive-4by3">
-      <iframe class="embed-responsive-item" src="https://storymaps.arcgis.com/stories/da6688d548a44aea8171222b6d3ce5b7"></iframe>
-        </div>'
-    )))
-}
+# about_ui <- function(){
+#   #shinyWidgets::setBackgroundColor(color = "#194663")
+#   tagList(HTML(
+#     paste0(
+#   '<div class="embed-responsive embed-responsive-4by3">
+#       <iframe class="embed-responsive-item"
+#" src="https://storymaps.arcgis.com/stories/da6688d548a44aea8171222b6d3ce5b7"></iframe>
+#         </div>'
+#     )))
+# }
 
 ui <-
   shinydashboardPlus::dashboardPage(
@@ -47,7 +91,7 @@ ui <-
     sidebar = shinydashboardPlus::dashboardSidebar(
       sidebarMenu(id = 'tabs',
        menuItem("Home",tabName = "lp"),
-       menuItem("About",tabName = "about"),
+       #menuItem("About",tabName = "about"),
         menuItem("Pre-screen", tabName = "filter_locations"),
         menuItem("Prioritize Subbasins", tabName = "criteria")
       # menuItem("Debug",tabName = "Debug")
@@ -59,8 +103,10 @@ ui <-
         tabItems(
          tabItem("lp",  landingpage_ui(
            actionButton("go",label = "Get Started", class = "btn btn-primary btn-lg", style = "color:white"),
-           actionButton("learn",label = "Learn More", class = "btn btn-secondary btn-lg"))),
-         tabItem("about",  about_ui()),
+           actionButton("learn",label = "Learn More", class = "btn btn-secondary btn-lg", icon = icon('external-link-alt'),
+                        onclick ="window.open('https://storymaps.arcgis.com/stories/da6688d548a44aea8171222b6d3ce5b7')"
+                        ))),
+         #tabItem("about",  about_ui()),
          tabItem("filter_locations",filter_page_UI("filter-main")),
          tabItem("criteria",criteria_page_UI2("criteria_main"))
         # tabItem("Debug",debugUI("main"))
