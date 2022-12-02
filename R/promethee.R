@@ -33,7 +33,8 @@ promethee_2 <- function(dataset = NULL,
                         IndT = NULL,
                         PreT = NULL,
                         PreF = NULL,
-                        gaussP = NULL) {
+                        gaussP = NULL,
+                        limit = NULL) {
   basins <- rownames(dataset)
   criteria <- colnames(dataset)
 
@@ -46,14 +47,9 @@ promethee_2 <- function(dataset = NULL,
     weighting <- rep(1, c)
   }
 
-  # handle nas: replaces column with zeros
-  #dataset[which(is.na(dataset %>% colSums()))] <- 0
-
   weighting <- weighting %>% make.matrix(n)
 
   # Min max -----------------------------------------------------------------
-
-
   if (is.null(minmax)) {
     minmax <- rep("min", c)
   }
@@ -63,7 +59,6 @@ promethee_2 <- function(dataset = NULL,
   if (is.null(IndT)) {
     IndT <- runif(c, 0, 0)
   }
-
   IndT <- IndT %>% make.matrix(n)
 
   if (is.null(PreT)) {
@@ -82,10 +77,6 @@ promethee_2 <- function(dataset = NULL,
   }
   gaussP <- gaussP %>% make.matrix(n)
 
-  # handle nas: replaces column with zeros
-  #na_cols <- (is.na(dataset %>% colSums()))
-  #dataset[which(is.na(dataset %>% colSums()))] <- 0
-
   res <- PROMETHEE(dataset = dataset,
                    PreferenceF = PreF,
                    PreferenceT = PreT,
@@ -94,16 +85,9 @@ promethee_2 <- function(dataset = NULL,
                    Weights = weighting,
                    Min_Max = minmax)
 
-  # res <- PROMETHEEOutrankingFlows(
-  #   performanceTable = dataset %>% # dplyr::select(-watershed.name) %>%
-  #     as.matrix(),
-  #   preferenceFunction = PreF,
-  #   PreT,
-  #   IndT,
-  #   criteriaWeights = weighting,
-  #   criteriaMinMax = minmax,
-  #   gaussParameter = gaussP
-  # )
+
+  #make row and column names
+
 
 
   out_flows <- data.frame(
@@ -113,43 +97,25 @@ promethee_2 <- function(dataset = NULL,
     score = res[["PROMETHEE2"]]
   ) %>%
     round(2) %>%
-    mutate(score_rank = min_rank(-score))
+    mutate(score_rank = min_rank(-score))  |>
+    arrange(desc(score))
 
-  # if(!is.null(limit)){
-  #   out_flows <- slice_min(score_rank,limit)
-  # }
-
-  # get partial ranking
-
-
-
-
-  # Get the scored table with pos and neg flows -----------------------------
-
- # pf2 <- out_flows
-  # %>%
-  #   mutate(score = (phi_plus - phi_minus) %>%
-  #            round(digits = 2)) #%>%
-  # rownames_to_column(var = name_col)
-
-  # add rankings -----------------------------
-
-  # make a ranking dataframe
-  # pf2$rank <- min_rank(-pf2$score)
-  # pf2_outflows <-
-  #   data.frame(
-  #     row.names = basins,
-  #     phi_plus = res[1],
-  #     phi_minus = res[2]
-  #   ) %>%
-  #     round(2) %>%
-  #     mutate(score = (phi_plus - phi_minus) %>%
-  #              round(digits = 2)) %>%
-  #     mutate(score_rank = min_rank(-score)) %>% sig_figs()
-  #
-  res$out_flows <- out_flows
+  ucflows <- res$UnicriterionNetFlows |>
+    as.data.frame() |>
+    `colnames<-`(criteria) |>
+    `rownames<-`(basins) |>
+  merge(out_flows |> dplyr::select(c(score_rank, score)),by=0) |>
+    arrange(desc(score)) |>
+    column_to_rownames("Row.names")
 
 
+  if(!is.null(limit)){
+    out_flows <- out_flows |>
+      head(limit)
+    ucflows <- subset(ucflows, rownames(ucflows) %in% rownames(out_flows))
+  }
+res$out_flows <- out_flows
+res$UnicriterionNetFlows <- ucflows
   #
   return(res)
 }
