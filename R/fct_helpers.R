@@ -493,11 +493,11 @@ clean_mcda_inputs <- function(ex_user_metrics,na_cols=NULL){
 #normalizePT(performanceTable = subbasin_data)
 
 mcda_scatter<-function(df){
-  df |> rownames_to_column("SWSID") %>%
+  df %>% rownames_to_column("SWSID") %>%
     # group_by(score) %>%
-    e_charts(phi_minus) |>
-    e_scatter(serie = phi_plus,size = score,bind=SWSID) |>
-    e_x_axis(inverse=TRUE) |>
+    e_charts(phi_minus) %>%
+    e_scatter(serie = phi_plus,size = score,bind=SWSID) %>%
+    e_x_axis(inverse=TRUE) %>%
     #e_axis(axis = c('x','y'), show=FALSE) %>%
     e_tooltip(
       formatter = htmlwidgets::JS("
@@ -520,7 +520,7 @@ mcda_scatter<-function(df){
     #         while lower (leftmost) positions on the x-axis denotes
     #         subbasins with relatively more weakness than other subbasins.
     #         See the full tally of metric scores
-    #         in the downloadable csv file.") |>  # Add title & subtitle
+    #         in the downloadable csv file.") %>%  # Add title & subtitle
     e_mark_line(data = list(yAxis = 0), title = "Φ- (Relative Weakness)",  label = list(position = "middle")) %>%
     e_visual_map(score,dimension=2,
                  inRange = list(color = king_co_palette)) %>%
@@ -582,16 +582,16 @@ goals_table <- function(goal_num=1){
 uc_goal_chart <- function(uc){
 
   uc.long <- uc %>%
-    pivot_longer(-c(SWSID,score,score_rank)) |>
-    left_join(metrics,by=(c('name'='Name'))) #|>
+    pivot_longer(-c(SWSID,score,score_rank)) %>%
+    left_join(metrics,by=(c('name'='Name'))) #%>%
    # mutate(Goal = as.numeric(Goal))
 
-  uc.goals <- uc.long |>
-    group_by(SWSID,Goal,Goal_Description,score,score_rank) |>
-    summarise(value = sum(value)) |>
-    ungroup() |>
-    mutate(value = value |>
-             #scales::rescale(to = c(-1,1)) |>
+  uc.goals <- uc.long %>%
+    group_by(SWSID,Goal,Goal_Description,score,score_rank) %>%
+    summarise(value = sum(value)) %>%
+    ungroup() %>%
+    mutate(value = value %>%
+             #scales::rescale(to = c(-1,1)) %>%
              round(2),
            basin_name = paste0(score_rank, ') Subbasin ',SWSID)
     )
@@ -599,9 +599,11 @@ uc_goal_chart <- function(uc){
     apex(
       uc.goals,
       type='bar',
-      mapping = aes(x=Goal,y=value)
+      mapping = aes(x=Goal,y=value),
+      toolbar = list(show = FALSE)
       #height = 400,
-    ) |>
+    ) %>%
+
     ax_plotOptions(
       bar=bar_opts(
         horizontal = TRUE,
@@ -610,21 +612,23 @@ uc_goal_chart <- function(uc){
         columnWidth = '60%',
         dataLabels = list(position = "middle"),
         distributed = TRUE
-      )) |>
+      )) %>%
     ax_xaxis(type = "categories"
       #min=-1,max=1,tickAmount = 4,
     #categories = c("Goal 1",'Goal 2','Goal 3','Goal 4')
-    ) |>
-    add_vline(0, color = "#999", dash = 0) |>
+    ) %>%
+    add_vline(0, color = "#999", dash = 0) %>%
     ax_dataLabels(
       enabled = TRUE,
       textAnchor = 'start',
-      style=list(fontSize = '9px',fontWeight = 300, colors=c('#555'))) |>
+      style=list(fontSize = '9px',fontWeight = 300, colors=c('#555'))) %>%
     ax_facet_wrap(
       vars(basin_name),
-      scales = "fixed",ncol=3,chart_height = "150px") #|>
-    #ax_theme(palette = "pallete2") |>
-    #ax_legend(show=FALSE)
+      scales = "fixed",ncol=3,chart_height = "150px") %>%
+    ax_chart(
+        toolbar = list(show = FALSE)) %>% #%>%
+    ax_theme(palette = "pallete2") %>%
+    ax_legend(show=FALSE)
 
   return(a_chart)
 }

@@ -97,20 +97,20 @@ promethee_2 <- function(dataset = NULL,
     score = res[["PROMETHEE2"]]
   ) %>%
     round(2) %>%
-    mutate(score_rank = min_rank(-score))  |>
+    mutate(score_rank = min_rank(-score)) %>%
     arrange(desc(score))
 
-  ucflows <- res$UnicriterionNetFlows |>
-    as.data.frame() |>
-    `colnames<-`(criteria) |>
-    `rownames<-`(basins) |>
-  merge(out_flows |> dplyr::select(c(score_rank, score)),by=0) |>
-    arrange(desc(score)) |>
+  ucflows <- res$UnicriterionNetFlows %>%
+    as.data.frame() %>%
+    `colnames<-`(criteria) %>%
+    `rownames<-`(basins) %>%
+  merge(out_flows %>% dplyr::select(c(score_rank, score)),by=0) %>%
+    arrange(desc(score)) %>%
     column_to_rownames("Row.names")
 
 
   if(!is.null(limit)){
-    out_flows <- out_flows |>
+    out_flows <- out_flows %>%
       head(limit)
     ucflows <- subset(ucflows, rownames(ucflows) %in% rownames(out_flows))
   }

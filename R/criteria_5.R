@@ -102,7 +102,15 @@ title = "Results by Goal",
                                           shinycssloaders::withSpinner(
                                             apexfacetOutput(ns("uc_goals"))
                                           )
-                                        )
+                                        ),
+tabPanel(width = 12, title = "reports",
+         strong("Scenario"),
+         textOutput(ns("scenario")),
+         strong("User Weights"),
+         DTOutput(ns("report1")),
+         strong("all metrics"),
+         DTOutput(ns("report2"))
+         )
 
       )
     )
@@ -124,7 +132,7 @@ criteria_page_server2 <- function(id, rv2) {
 
       goals <- metrics %>%
         select(Goal, Goal_Description) %>%
-        unique()
+        unique() %>% arrange(Goal)
 
       # count number of basins
       cleaned_criteria <- reactive({
@@ -267,7 +275,6 @@ criteria_page_server2 <- function(id, rv2) {
       iv$add_rule("goal4", sv_between(0, 5))
       iv$enable()
       user_weights.df <- reactive({
-        # req(user_weights())
         data.frame(
           Goal = goals$Goal,
           Name = goals$Goal_Description,
@@ -276,7 +283,6 @@ criteria_page_server2 <- function(id, rv2) {
       })
 
       user_edits_all_metrics <- reactive({
-        # req(c(all_metrics(), user_weights.df()))
         merge(
           all_metrics() %>%
             select("Criteria_Name" = "Name", "Goal", "Metric_no", "orientation_protect", "orientation_restore", "Indifference_Threshold_Percentage"),
@@ -291,9 +297,8 @@ criteria_page_server2 <- function(id, rv2) {
       cleaned_list <- reactive(remove_nas_from_pt(pt.df = cleaned_criteria()))
       cleaned_pt <- reactive(cleaned_list()[["cleaned_pt"]])
       na_cols <- reactive(cleaned_list()[["na_cols"]])
-      cleaned_user_table <- reactive({
-        #   #req(sum(user_weights() != 0))
 
+      cleaned_user_table <- reactive({
         clean_mcda_inputs(
           ex_user_metrics = user_edits_all_metrics(),
           na_cols = na_cols()
@@ -317,6 +322,8 @@ criteria_page_server2 <- function(id, rv2) {
       user_weights <- reactive(
         c(input$goal1, input$goal2, input$goal3, input$goal4)
       )
+
+      observe(print(user_weights()))
 
 
 
@@ -412,6 +419,25 @@ criteria_page_server2 <- function(id, rv2) {
       })
 
       ## tables ------------------------------------------------------------------
+      ## reporting
+
+
+      out_tables <- reactive(
+        #metrics %>%
+         # select(c(Metric_no, Name, Goal, Subgoal, Goal_Description,
+          #       Subgoal_Description)) %>%
+          #add_column(
+        user_edits_all_metrics()
+        #cleaned_user_table()[["Weight"]] %>% as.data.frame()
+      )
+
+
+# report1 -----------------------------------------------------------------
+
+    output$scenario <- renderText(input$orientation_select)
+    output$report1 <- renderDT(user_weights.df())
+    output$report2 <- renderDT(mcda_results()[["UnicriterionNetFlows"]])
+
       # table showing final scores
       output$mcda_results <- renderDT(
         datatable(
@@ -566,7 +592,7 @@ criteria_page_server2 <- function(id, rv2) {
       # Charts ------------------------------------------------------------------
 
       # Unicriterion Net flow Chart -----------------------------------------------------------
-      uc.df <- reactive(mcda_results()[['UnicriterionNetFlows']] |>
+      uc.df <- reactive(mcda_results()[['UnicriterionNetFlows']] %>%
         rownames_to_column("SWSID"))
       observe(print(uc.df()))
       output$uc_goals <-
