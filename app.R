@@ -122,8 +122,6 @@ footer  = dashboardFooter(
 
 server <- function(input, output, session) {
 
-  #reactive values to be passed to modules
-  #rv <- reactiveValues(subbasin_data = subbasin_data, metrics = metrics) #, basin_ids = subbasin_metrics %>% rownames())
 
 
   observe(

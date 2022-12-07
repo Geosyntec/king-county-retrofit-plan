@@ -579,3 +579,52 @@ goals_table <- function(goal_num=1){
 
 }
 
+uc_goal_chart <- function(uc){
+
+  uc.long <- uc %>%
+    pivot_longer(-c(SWSID,score,score_rank)) |>
+    left_join(metrics,by=(c('name'='Name'))) #|>
+   # mutate(Goal = as.numeric(Goal))
+
+  uc.goals <- uc.long |>
+    group_by(SWSID,Goal,Goal_Description,score,score_rank) |>
+    summarise(value = sum(value)) |>
+    ungroup() |>
+    mutate(value = value |>
+             #scales::rescale(to = c(-1,1)) |>
+             round(2),
+           basin_name = paste0(score_rank, ') Subbasin ',SWSID)
+    )
+  a_chart <-
+    apex(
+      uc.goals,
+      type='bar',
+      mapping = aes(x=Goal,y=value)
+      #height = 400,
+    ) |>
+    ax_plotOptions(
+      bar=bar_opts(
+        horizontal = TRUE,
+        #borderRadius = 4,
+        barHeight = '60%',
+        columnWidth = '60%',
+        dataLabels = list(position = "middle"),
+        distributed = TRUE
+      )) |>
+    ax_xaxis(type = "categories"
+      #min=-1,max=1,tickAmount = 4,
+    #categories = c("Goal 1",'Goal 2','Goal 3','Goal 4')
+    ) |>
+    add_vline(0, color = "#999", dash = 0) |>
+    ax_dataLabels(
+      enabled = TRUE,
+      textAnchor = 'start',
+      style=list(fontSize = '9px',fontWeight = 300, colors=c('#555'))) |>
+    ax_facet_wrap(
+      vars(basin_name),
+      scales = "fixed",ncol=3,chart_height = "150px") #|>
+    #ax_theme(palette = "pallete2") |>
+    #ax_legend(show=FALSE)
+
+  return(a_chart)
+}

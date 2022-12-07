@@ -399,19 +399,19 @@ basemap %>%
 
 # Click events ------------------------------------------------------------
 
-    observeEvent(input$map_shape_click, {
-
-      #capture the info of the clicked polygon
-      click <- input$map_shape_click
-
-      #subset your table with the id of the clicked polygon
-      #selected <- filtered_ids[mydata$myID == click$id,]
-
-      #if click id isn't null render the table
-      if(!is.null(click$id)){
-       print(click$id)
-        }
-      })
+    # observeEvent(input$map_shape_click, {
+    #
+    #   #capture the info of the clicked polygon
+    #   click <- input$map_shape_click
+    #
+    #   #subset your table with the id of the clicked polygon
+    #   #selected <- filtered_ids[mydata$myID == click$id,]
+    #
+    #   #if click id isn't null render the table
+    #   if(!is.null(click$id)){
+    #    print(click$id)
+    #     }
+    #   })
 
 
 

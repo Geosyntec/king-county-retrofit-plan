@@ -1,6 +1,7 @@
 require(shiny)
 require(rhandsontable)
 require(shinydashboard)
+require(shinyWidgets)
 require(shinydashboardPlus)
 require(sf)
 require(dplyr)
@@ -14,6 +15,7 @@ require(tidyr)
 require(shinyjs)
 require(fresh)
 require(shinyvalidate)
+require(apexcharter)
 
 
 load(here::here("data", "subbasin_data.rda"))
@@ -38,6 +40,8 @@ basemap <- leaflet() %>%
 
 
 king_co_palette <- c("#FFE39F", "#B2CB9A", "#6FB084", "#3B925D", "#1D7324")
+
+#https://coolors.co/palette/194663-fbb360-3fa6da-ec9a3c-111418
 
 kingco_theme <- fresh::create_theme(
   fresh::adminlte_color(
