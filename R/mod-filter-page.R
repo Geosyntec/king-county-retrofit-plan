@@ -353,19 +353,19 @@ filter_page_server <- function(id, rv) {
 
 
     output$map <- renderLeaflet({
-basemap %>%
-        addLayersControl(
-          position = "bottomright", options = layersControlOptions(collapsed = FALSE),
-          baseGroups = c("Base", "Satellite", "Grey"),
-          overlayGroups = c("City Limits", "All Subbasins")
-        ) %>%
-        addPolygons(
-          data = subbasin_shps, weight = 1, opacity = 0.6,
-          color = "#9E9E9E", fillColor = "#d2d6de",
-          group = "All Subbasins", options = list(zIndex = 100)
-        ) %>%
-        addPolygons(data = cities_shp, group = "City Limits") %>%
-        hideGroup("City Limits")
+basemap #%>%
+        # addLayersControl(
+        #   position = "bottomright", options = layersControlOptions(collapsed = FALSE),
+        #   baseGroups = c("Base", "Satellite", "Grey"),
+        #   overlayGroups = c("City Limits", "All Subbasins")
+        # ) %>%
+        # addPolygons(
+        #   data = subbasin_shps, weight = 1, opacity = 0.6,
+        #   color = "#9E9E9E", fillColor = "#d2d6de",
+        #   group = "All Subbasins", options = list(zIndex = 100)
+        # ) %>%
+        # addPolygons(data = cities_shp, group = "City Limits") %>%
+        # hideGroup("City Limits")
     })
 
     shps_filtered <- reactive({

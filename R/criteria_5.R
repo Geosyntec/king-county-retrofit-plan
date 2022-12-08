@@ -80,41 +80,41 @@ criteria_page_UI2 <- function(id) {
       # Results Tabset ---------------------------------  --------------------------------
       column(
         width = 8,
-
-            box(
-              headerBorder = FALSE,
-              title = "Results", status = "primary", width = NULL,
-              shinyWidgets::panel(
-                leafletOutput(ns("map"), height = 600)
-              )
-
+        box(
+          headerBorder = FALSE,
+          title = "Results", status = "primary", width = NULL,
+          shinyWidgets::panel(
+            leafletOutput(ns("map"), height = 600)
+          )
+        ),
+        shinydashboard::tabBox(
+          width = NULL,
+          tabPanel(
+            width = 12, title = "Table",
+            shinyWidgets::panel(
+              # shinycssloaders::withSpinner(
+              DTOutput(ns("mcda_results"))
+            )
           ),
-        shinydashboard::tabBox(width = NULL,
-        tabPanel(width = 12, title = 'Table',
-
-                     shinyWidgets::panel(
-                       # shinycssloaders::withSpinner(
-                       DTOutput(ns("mcda_results"))
-                     )
-                   ),
-tabPanel(width=12,
-title = "Results by Goal",
-                                          shinycssloaders::withSpinner(
-                                            apexfacetOutput(ns("uc_goals"))
-                                          )
-                                        ),
-tabPanel(width = 12, title = "reports",
-         strong("Scenario"),
-         textOutput(ns("scenario")),
-         strong("User Weights"),
-         DTOutput(ns("report1")),
-         strong("all metrics"),
-         DTOutput(ns("report2"))
-         )
-
+          tabPanel(
+            width = 12,
+            title = "Results by Goal",
+            shinycssloaders::withSpinner(
+              apexfacetOutput(ns("uc_goals"))
+            )
+          ),
+          tabPanel(
+            width = 12, title = "reports",
+            strong("Scenario"),
+            textOutput(ns("scenario")),
+            strong("User Weights"),
+            DTOutput(ns("report1")),
+            strong("all metrics"),
+            DTOutput(ns("report2"))
+          )
+        )
       )
     )
-  )
   )
 }
 
@@ -132,7 +132,8 @@ criteria_page_server2 <- function(id, rv2) {
 
       goals <- metrics %>%
         select(Goal, Goal_Description) %>%
-        unique() %>% arrange(Goal)
+        unique() %>%
+        arrange(Goal)
 
       # count number of basins
       cleaned_criteria <- reactive({
@@ -406,7 +407,7 @@ criteria_page_server2 <- function(id, rv2) {
             dataset = top_PT() %>% dplyr::select(-weighted_sum_score),
             weighting = cleaned_user_table()[["Weight"]], #
             minmax = min_max.vec(),
-            IndT = cleaned_user_table()[["Indifference_abs"]] ,
+            IndT = cleaned_user_table()[["Indifference_abs"]],
             limit = return_vals
           )
         )
@@ -423,20 +424,20 @@ criteria_page_server2 <- function(id, rv2) {
 
 
       out_tables <- reactive(
-        #metrics %>%
-         # select(c(Metric_no, Name, Goal, Subgoal, Goal_Description,
-          #       Subgoal_Description)) %>%
-          #add_column(
+        # metrics %>%
+        # select(c(Metric_no, Name, Goal, Subgoal, Goal_Description,
+        #       Subgoal_Description)) %>%
+        # add_column(
         user_edits_all_metrics()
-        #cleaned_user_table()[["Weight"]] %>% as.data.frame()
+        # cleaned_user_table()[["Weight"]] %>% as.data.frame()
       )
 
 
-# report1 -----------------------------------------------------------------
+      # report1 -----------------------------------------------------------------
 
-    output$scenario <- renderText(input$orientation_select)
-    output$report1 <- renderDT(user_weights.df())
-    output$report2 <- renderDT(mcda_results()[["UnicriterionNetFlows"]])
+      output$scenario <- renderText(input$orientation_select)
+      output$report1 <- renderDT(user_weights.df())
+      output$report2 <- renderDT(mcda_results()[["UnicriterionNetFlows"]])
 
       # table showing final scores
       output$mcda_results <- renderDT(
@@ -505,7 +506,7 @@ criteria_page_server2 <- function(id, rv2) {
         )
       )
 
-      #top items to return
+      # top items to return
       return_vals <- 9
 
       pf2_outflows <- reactive(mcda_results()[["out_flows"]])
@@ -552,7 +553,7 @@ criteria_page_server2 <- function(id, rv2) {
         map.pal <- (colorBin(king_co_palette, values(), 5, pretty = TRUE, reverse = FALSE))
 
         pal.rev <- (colorBin(king_co_palette, values(), 5, pretty = TRUE, reverse = TRUE))
-
+print(pal.rev)
         leafletProxy("map") %>%
           clearGroup("top_sheds") %>%
           leaflet::removeControl("legend") %>%
@@ -592,7 +593,7 @@ criteria_page_server2 <- function(id, rv2) {
       # Charts ------------------------------------------------------------------
 
       # Unicriterion Net flow Chart -----------------------------------------------------------
-      uc.df <- reactive(mcda_results()[['UnicriterionNetFlows']] %>%
+      uc.df <- reactive(mcda_results()[["UnicriterionNetFlows"]] %>%
         rownames_to_column("SWSID"))
       observe(print(uc.df()))
       output$uc_goals <-

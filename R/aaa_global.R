@@ -33,10 +33,21 @@ goals <- metrics %>% select(Goal, Goal_Description, Subgoal, Subgoal_Description
 project_crs <- st_crs(subbasin_shps)
 
 basemap <- leaflet() %>%
-  addProviderTiles("CartoDB.Voyager", group = "Base") %>%
-  # addProviderTiles("CartoDB.DarkMatter", group = "Base") %>%
+  addProviderTiles("Esri.WorldTopoMap", group = "Base") %>%
   addProviderTiles("Esri.WorldGrayCanvas", group = "Grey") %>%
-  addProviderTiles("Esri.WorldImagery", group = "Satellite")
+  addProviderTiles("Esri.WorldImagery", group = "Satellite") %>%
+addLayersControl(
+  position = "bottomright", options = layersControlOptions(collapsed = FALSE),
+  baseGroups = c("Base", "Satellite", "Grey"),
+  overlayGroups = c("City Limits", "All Subbasins")
+) %>%
+addPolygons(
+  data = subbasin_shps, weight = 1, opacity = 0.6,
+  color = "#9E9E9E", fillColor = "#d2d6de",
+  group = "All Subbasins", options = list(zIndex = 100)
+) %>%
+addPolygons(data = cities_shp, group = "City Limits") %>%
+hideGroup("City Limits")
 
 
 king_co_palette <- c("#FFE39F", "#B2CB9A", "#6FB084", "#3B925D", "#1D7324")

@@ -34,6 +34,13 @@ subbasin_shps <- subbasin_simplified %>% select(c(SWSID, geometry))
 
 usethis::use_data(subbasin_shps, overwrite = TRUE)
 
+wrias <- subbasin_simplified %>%
+  group_by(WQBE_basin) %>%
+  summarise(m = mean(Shape_Leng)) %>%
+  st_cast() %>%
+  select(WQBE_basin)
+
+usethis::use_data(wrias, overwrite = TRUE)
 # subbasin metrics --------------------------------------------------------
 subbasin_metrics <- read_excel("data-raw/source_data/20220722_KC_SPS_Complete_Metrics_Join_Only.xls") %>%
   mutate_at(
