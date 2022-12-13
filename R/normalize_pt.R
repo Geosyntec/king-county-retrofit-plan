@@ -1,4 +1,4 @@
-normalizePT <- function(performanceTable, normalizationTypes=NULL, alternativesIDs = NULL, criteriaIDs = NULL){
+normalizePT <- function(performanceTable, normalizationTypes = NULL, alternativesIDs = NULL, criteriaIDs = NULL) {
 
   ## http://en.wikipedia.org/wiki/Feature_scaling
 
@@ -24,54 +24,51 @@ normalizePT <- function(performanceTable, normalizationTypes=NULL, alternativesI
   #
   # if (!is.null(criteriaIDs) && !is.null(normalizationTypes)) normalizationTypes <- normalizationTypes[criteriaIDs]
 
-  for (i in 1:dim(performanceTable)[2]){
-    if (normalizationTypes == "percentageOfMax"){
-      performanceTable[,i] <- percentageOfMax(performanceTable[,i])
+  for (i in 1:dim(performanceTable)[2]) {
+    if (normalizationTypes == "percentageOfMax") {
+      performanceTable[, i] <- percentageOfMax(performanceTable[, i])
+    } else if (normalizationTypes == "rescaling") {
+      performanceTable[, i] <- rescaling(performanceTable[, i])
+    } else if (normalizationTypes == "standardization") {
+      performanceTable[, i] <- standardization(performanceTable[, i])
+    } else if (normalizationTypes == "scaleToUnitLength") {
+      performanceTable[, i] <- scaleToUnitLength(performanceTable[, i])
+    } else {
+      (
+        stop("Error")
+      )
     }
-    else if (normalizationTypes == "rescaling"){
-      performanceTable[,i] <- rescaling(performanceTable[,i])
-    }
-    else if (normalizationTypes == "standardization"){
-      performanceTable[,i] <- standardization(performanceTable[,i])
-    }
-    else if (normalizationTypes == "scaleToUnitLength"){
-      performanceTable[,i] <- scaleToUnitLength(performanceTable[,i])
-    }
-    else(
-      stop('Error')
-    )
   }
 
   return(performanceTable)
-
 }
 
-percentageOfMax <- function(data){
+percentageOfMax <- function(data) {
   max <- max(data)
-  data <- data/max
+  data <- data / max
   return(data)
 }
 
-rescaling <- function(data){
+rescaling <- function(data) {
   max <- max(data)
   min <- min(data)
-  data <- (data-min)/(max-min)
-  if(!is.finite(data %>% sum())){
+  data <- (data - min) / (max - min)
+  if (!is.finite(data %>% sum())) {
     return(0)
   } else {
-  return(data)}
+    return(data)
+  }
 }
 
-standardization <- function(data){
+standardization <- function(data) {
   mean <- mean(data)
   sd <- sd(data)
-  data <- (data - mean)/sd
+  data <- (data - mean) / sd
   return(data)
 }
 
-scaleToUnitLength <- function(data){
+scaleToUnitLength <- function(data) {
   norm <- sqrt(sum(data^2))
-  data <- data/norm
+  data <- data / norm
   return(data)
 }
-

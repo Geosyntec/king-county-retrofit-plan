@@ -1,8 +1,8 @@
 
 
 # turns a vector into a repeating matrix
-make.matrix <- function(vector.in,n) {
-  matrix(rep(vector.in,each=n),nrow=n)
+make.matrix <- function(vector.in, n) {
+  matrix(rep(vector.in, each = n), nrow = n)
 }
 
 
@@ -77,23 +77,25 @@ promethee_2 <- function(dataset = NULL,
   }
   gaussP <- gaussP %>% make.matrix(n)
 
-  res <- PROMETHEE(dataset = dataset,
-                   PreferenceF = PreF,
-                   PreferenceT = PreT,
-                   S_Gauss = gaussP,
-                   IndifferenceT = IndT,
-                   Weights = weighting,
-                   Min_Max = minmax)
+  res <- PROMETHEE(
+    dataset = dataset,
+    PreferenceF = PreF,
+    PreferenceT = PreT,
+    S_Gauss = gaussP,
+    IndifferenceT = IndT,
+    Weights = weighting,
+    Min_Max = minmax
+  )
 
 
-  #make row and column names
+  # make row and column names
 
 
 
   out_flows <- data.frame(
     row.names = basins,
-    phi_plus = res[["PROMETHEE1"]][,1],
-    phi_minus = res[["PROMETHEE1"]][,2],
+    phi_plus = res[["PROMETHEE1"]][, 1],
+    phi_minus = res[["PROMETHEE1"]][, 2],
     score = res[["PROMETHEE2"]]
   ) %>%
     round(2) %>%
@@ -104,18 +106,18 @@ promethee_2 <- function(dataset = NULL,
     as.data.frame() %>%
     `colnames<-`(criteria) %>%
     `rownames<-`(basins) %>%
-  merge(out_flows %>% dplyr::select(c(score_rank, score)),by=0) %>%
+    merge(out_flows %>% dplyr::select(c(score_rank, score)), by = 0) %>%
     arrange(desc(score)) %>%
     column_to_rownames("Row.names")
 
 
-  if(!is.null(limit)){
+  if (!is.null(limit)) {
     out_flows <- out_flows %>%
       head(limit)
     ucflows <- subset(ucflows, rownames(ucflows) %in% rownames(out_flows))
   }
-res$out_flows <- out_flows
-res$UnicriterionNetFlows <- ucflows
+  res$out_flows <- out_flows
+  res$UnicriterionNetFlows <- ucflows
   #
   return(res)
 }
@@ -178,7 +180,3 @@ adjacency_matrix <- function(out_flows, basins) {
 
   return(adj_mat_numeric)
 }
-
-
-
-

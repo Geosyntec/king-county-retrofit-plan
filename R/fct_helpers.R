@@ -1,6 +1,6 @@
 library(leaflet)
 load(here::here("data", "metrics.rda"))
-card_warning <- function(.num,.description){
+card_warning <- function(.num, .description) {
   HTML(
     paste0(
       '
@@ -10,40 +10,42 @@ card_warning <- function(.num,.description){
         <h5 class="card-title">Warning card title</h5>
           <p class="card-text">Some quick example text to build on the card title and make up the bulk of the cards content.</p>
   </div>
-</div>'))
-
+</div>'
+    )
+  )
 }
 
 card <- function(.num, .description) {
   HTML(
     paste0(
-    '
+      '
 <div class="card text-right "float-left";"style="width: 18rem;">
   <div class="card-body">
-    <h1 class="card-title">',.num,'</h1>
-    <p class="card-text"><small>',.description,'</small> </p>
+    <h1 class="card-title">', .num, '</h1>
+    <p class="card-text"><small>', .description, "</small> </p>
 
   </div>
 </div>
 
-'
-  ))
+"
+    )
+  )
 }
 
-dev_pill <- function(message = "In development"){
-dashboardBadge(color="orange", message)
-  }
+dev_pill <- function(message = "In development") {
+  dashboardBadge(color = "orange", message)
+}
 
 
 
 
-#return watersheds that intersect a boundary
-get_intersecting_ids <- function(right,left,id_col="SWSID"){
+# return watersheds that intersect a boundary
+get_intersecting_ids <- function(right, left, id_col = "SWSID") {
   sf::sf_use_s2(FALSE)
   suppressWarnings(
-   sf::st_intersection(right,left) %>% sf::st_drop_geometry() %>%
-     pull(id_col)
-   )
+    sf::st_intersection(right, left) %>% sf::st_drop_geometry() %>%
+      pull(id_col)
+  )
 }
 
 #' sig_figs
@@ -56,11 +58,9 @@ get_intersecting_ids <- function(right,left,id_col="SWSID"){
 #' @export
 #'
 #' @examples
-sig_figs <- function(df,n=2){
+sig_figs <- function(df, n = 2) {
   return(df %>%
-
-           mutate(across(where(is.numeric),signif,n))
-  )
+    mutate(across(where(is.numeric), signif, n)))
 }
 
 
@@ -72,7 +72,7 @@ sig_figs <- function(df,n=2){
 #' @return The return value, if any, from executing the function.
 #'
 #' @noRd
-plot_pref_flows <- function(pf2, adj_mat_numeric,name_col=NULL) {
+plot_pref_flows <- function(pf2, adj_mat_numeric, name_col = NULL) {
   # build graph object from adjacency matrix
   g <-
     igraph::graph_from_adjacency_matrix(
@@ -81,10 +81,10 @@ plot_pref_flows <- function(pf2, adj_mat_numeric,name_col=NULL) {
       mode = "directed"
     )
 
-  if(is.null(name_col)) {
-    pf2<- pf2 %>% rownames_to_column('id')
+  if (is.null(name_col)) {
+    pf2 <- pf2 %>% rownames_to_column("id")
 
-    name_col <- 'id'
+    name_col <- "id"
   }
   basins <- pf2[name_col]
   g.vis <- visNetwork::visIgraph(g)
@@ -95,8 +95,8 @@ plot_pref_flows <- function(pf2, adj_mat_numeric,name_col=NULL) {
   to_rank <- left_join(edges, pf2, by = c("to" = name_col))
 
   ranked_edges <- data.frame(edges,
-                             from_rank = from_rank$rank,
-                             to_rank = to_rank$rank
+    from_rank = from_rank$rank,
+    to_rank = to_rank$rank
   )
 
   cleaned_edges <- ranked_edges %>%
@@ -131,50 +131,46 @@ plot_pref_flows <- function(pf2, adj_mat_numeric,name_col=NULL) {
 
   rotated_coords <- coords %*% rotation_matrix
 
-  nodes <- data.frame(id = basins,
-                      label = basins,
-                      rotated_coords,
+  nodes <- data.frame(
+    id = basins,
+    label = basins,
+    rotated_coords,
+    title = paste0(
+      "phi-: ",
+      pf2$phi_minus, "<br>",
+      "phi+: ",
+      pf2$phi_plus, "<br>",
+      "phi: ", pf2$score
+    )
+  )
 
 
-                      title = paste0(
-                                     "phi-: ",
-
-
-
-                                     pf2$phi_minus,"<br>",
-                                     "phi+: ",
-                                     pf2$phi_plus, "<br>",
-                                     "phi: ", pf2$score
-                      ))
-
-
-# Plot Graph --------------------------------------------------------------
+  # Plot Graph --------------------------------------------------------------
 
   plot.graph <-
     visNetwork::visNetwork(nodes, cleaned_edges) %>%
     visNetwork::visEdges(arrows = "toshiny") %>%
     visNetwork::visOptions(highlightNearest = TRUE) %>%
     visNetwork::visIgraphLayout(
-      #type = "full",
-      #ayout = "layout.norm",
-      layout="layout_as_tree",
+      # type = "full",
+      # ayout = "layout.norm",
+      layout = "layout_as_tree",
       flip.y = FALSE,
       smooth = TRUE, physics = FALSE,
       layoutMatrix = rotated_coords
     ) %>%
     visNetwork::visNodes(
       shape = "box",
-      fixed = list(y=TRUE),
-
+      fixed = list(y = TRUE),
       shadow = TRUE,
-
       `shapeProperties` = list(borderRadius = 5)
     ) %>%
-   # visPhysics(stabilization = FALSE) %>%
-    visNetwork::visPhysics(repulsion =  list(
-      damping = 0.95))%>%
+    # visPhysics(stabilization = FALSE) %>%
+    visNetwork::visPhysics(repulsion = list(
+      damping = 0.95
+    )) %>%
     visInteraction(dragNodes = FALSE)
-    #visIgraphLayout()
+  # visIgraphLayout()
   return(plot.graph)
 }
 
@@ -182,45 +178,36 @@ plot_pref_flows <- function(pf2, adj_mat_numeric,name_col=NULL) {
 
 
 make_summary_table <- function(data.df) {
-
-
   data <- data.df %>%
     pivot_longer(everything()) %>%
     group_by(name) %>%
     summarise(
-      hist = list(hist(value,plot=FALSE)$count)[1],#$counts,# %>% jsonlite::toJSON(),
-      mins = min(value) %>% signif(4) %>% format(big.mark = ','),
-      maxs = max(value)%>% signif(4)%>% format(big.mark = ','),
-      means =mean(value)%>% signif(4)%>% format(big.mark = ','),
-      sdevs = sd(value)%>% signif(4)%>% format(big.mark = ',')
+      hist = list(hist(value, plot = FALSE)$count)[1], # $counts,# %>% jsonlite::toJSON(),
+      mins = min(value) %>% signif(4) %>% format(big.mark = ","),
+      maxs = max(value) %>% signif(4) %>% format(big.mark = ","),
+      means = mean(value) %>% signif(4) %>% format(big.mark = ","),
+      sdevs = sd(value) %>% signif(4) %>% format(big.mark = ",")
     ) %>%
     group_by(name) %>%
     mutate(
-      chart =  jsonlite::toJSON(list(values = hist[[1]], options = list(type = "bar", bar.width=99))),
+      chart = jsonlite::toJSON(list(values = hist[[1]], options = list(type = "bar", bar.width = 99))),
       selected = TRUE
-      #minmax = "max",
-      #weight = 0
+      # minmax = "max",
+      # weight = 0
     ) %>%
     select(-hist) %>%
     as.data.frame()
-
-
-
-
-
-
-
 }
 
 
 
-jitter_layout <- function(layout_matrix, tolerance=0.2 ){
-  #check for overlapping nodes
+jitter_layout <- function(layout_matrix, tolerance = 0.2) {
+  # check for overlapping nodes
   dups <- duplicated(layout_matrix)
-  #move the x corridnate by tolerance time a random number
+  # move the x corridnate by tolerance time a random number
   for (i in 1:length(dups)) {
-    if(dups[i]){
-      layout_matrix[i,1] <- layout_matrix[i,1]*tolerance*runif(n=1,min=-1,max=1)
+    if (dups[i]) {
+      layout_matrix[i, 1] <- layout_matrix[i, 1] * tolerance * runif(n = 1, min = -1, max = 1)
     }
   }
   return(layout_matrix)
@@ -228,7 +215,7 @@ jitter_layout <- function(layout_matrix, tolerance=0.2 ){
 
 
 
-plot_jittered_pref_flows <- function(pf2, adj_mat_numeric,name_col=NULL,tolerance=0.2) {
+plot_jittered_pref_flows <- function(pf2, adj_mat_numeric, name_col = NULL, tolerance = 0.2) {
   # build graph object from adjacency matrix
   g <-
     igraph::graph_from_adjacency_matrix(
@@ -237,10 +224,10 @@ plot_jittered_pref_flows <- function(pf2, adj_mat_numeric,name_col=NULL,toleranc
       mode = "directed"
     )
 
-  if(is.null(name_col)) {
-    pf2<- pf2 %>% rownames_to_column('id')
+  if (is.null(name_col)) {
+    pf2 <- pf2 %>% rownames_to_column("id")
 
-    name_col <- 'id'
+    name_col <- "id"
   }
   basins <- pf2[name_col]
   g.vis <- visNetwork::visIgraph(g)
@@ -251,8 +238,8 @@ plot_jittered_pref_flows <- function(pf2, adj_mat_numeric,name_col=NULL,toleranc
   to_rank <- left_join(edges, pf2, by = c("to" = name_col))
 
   ranked_edges <- data.frame(edges,
-                             from_rank = from_rank$score_rank,
-                             to_rank = to_rank$score_rank
+    from_rank = from_rank$score_rank,
+    to_rank = to_rank$score_rank
   )
 
   cleaned_edges <- ranked_edges %>%
@@ -287,58 +274,54 @@ plot_jittered_pref_flows <- function(pf2, adj_mat_numeric,name_col=NULL,toleranc
 
   rotated_coords <- coords %*% rotation_matrix
 
-  nodes <- data.frame(id = basins,
-                      label = basins,
-                      rotated_coords,
-
-
-                      title = paste0(
-                        "phi-: ",
-
-
-
-                        pf2$phi_minus,"<br>",
-                        "phi+: ",
-                        pf2$phi_plus, "<br>",
-                        "phi: ", pf2$score
-                      ))
+  nodes <- data.frame(
+    id = basins,
+    label = basins,
+    rotated_coords,
+    title = paste0(
+      "phi-: ",
+      pf2$phi_minus, "<br>",
+      "phi+: ",
+      pf2$phi_plus, "<br>",
+      "phi: ", pf2$score
+    )
+  )
 
 
   # Plot Graph --------------------------------------------------------------
 
   plot.graph <-
-    #make graph
+    # make graph
     visNetwork::visNetwork(nodes, cleaned_edges) %>%
-    #node options
+    # node options
     visNetwork::visNodes(
       shape = "box",
-      fixed = list(y=TRUE),
+      fixed = list(y = TRUE),
       shadow = TRUE,
       `shapeProperties` = list(borderRadius = 5)
     ) %>%
-    #edge options
+    # edge options
     visNetwork::visEdges(arrows = "toshiny", physics = FALSE) %>%
-
-    #layout options
+    # layout options
 
     visNetwork::visIgraphLayout(
-      #type = "full",
+      # type = "full",
       layout = "layout.norm",
-      #layout="layout_as_tree", flip.y = FALSE,
+      # layout="layout_as_tree", flip.y = FALSE,
       smooth = TRUE, physics = FALSE,
       layoutMatrix = rotated_coords %>% jitter_layout(tolerance = tolerance)
-    )%>%
-
-    #vis options
+    ) %>%
+    # vis options
     visOptions(
       highlightNearest = list(
         enabled = TRUE,
-        algorithm = 'hierarchical',
-        degree = list(from=0,to=99)))%>%
+        algorithm = "hierarchical",
+        degree = list(from = 0, to = 99)
+      )
+    ) %>%
+    visNetwork::visPhysics(minVelocity = 1, hierarchicalRepulsion = list(avoidOverlap = TRUE))
 
-    visNetwork::visPhysics(minVelocity = 1, hierarchicalRepulsion = list(avoidOverlap = TRUE) )
-
-  #visIgraphLayout()
+  # visIgraphLayout()
   return(plot.graph)
 }
 
@@ -355,15 +338,20 @@ plot_jittered_pref_flows <- function(pf2, adj_mat_numeric,name_col=NULL,toleranc
 #'
 
 orient_weights <- function(weights, minmax) {
-  if(length(weights) != length(minmax)) {
+  if (length(weights) != length(minmax)) {
     stop(paste(
       "weights and minmax are different lengths",
-      "weights:",length(weights),
-      "minmax:",length(minmax)))
-  }else{
+      "weights:", length(weights),
+      "minmax:", length(minmax)
+    ))
+  } else {
     weights_orientation <-
-      minmax %>% replace(. == 'min', -1) %>% replace(. == 'max', 1) %>% as.numeric()
-    return(weights * weights_orientation)}
+      minmax %>%
+      replace(. == "min", -1) %>%
+      replace(. == "max", 1) %>%
+      as.numeric()
+    return(weights * weights_orientation)
+  }
 }
 
 
@@ -381,15 +369,16 @@ orient_weights <- function(weights, minmax) {
 #' @export
 #'
 #' @examples
-scaled_weighted_sum <- function(performanceTable,weights,n=25){
-  #check that peformanceTable is all numeric
-  if(sapply(performanceTable, function(x) all(varhandle::check.numeric(x, na.rm=TRUE)))  %>% all()){
-    scaled_vals <- normalizePT(performanceTable,"rescaling") #%>% na.omit()
-    x <- MCDA::weightedSum(scaled_vals,weights) %>%
-      as.data.frame() %>% `colnames<-`('weighted_sum_score')#%>% as.data.frame() #%>% top_n(25) %>% rownames()
+scaled_weighted_sum <- function(performanceTable, weights, n = 25) {
+  # check that peformanceTable is all numeric
+  if (sapply(performanceTable, function(x) all(varhandle::check.numeric(x, na.rm = TRUE))) %>% all()) {
+    scaled_vals <- normalizePT(performanceTable, "rescaling") # %>% na.omit()
+    x <- MCDA::weightedSum(scaled_vals, weights) %>%
+      as.data.frame() %>%
+      `colnames<-`("weighted_sum_score") # %>% as.data.frame() #%>% top_n(25) %>% rownames()
 
-    table_out <- merge(x,performanceTable,by=0,all=TRUE) %>%
-      column_to_rownames('Row.names') %>%
+    table_out <- merge(x, performanceTable, by = 0, all = TRUE) %>%
+      column_to_rownames("Row.names") %>%
       arrange(desc(weighted_sum_score)) %>%
       slice(1:n)
     return(
@@ -403,23 +392,27 @@ scaled_weighted_sum <- function(performanceTable,weights,n=25){
 make_numeric_inputs <- function(goals.df, id) {
   ns <- NS(id)
   tl <- tagList()
-  subset.df <- goals.df %>% select(Goal, Goal_Description) %>% unique() %>% arrange(Goal)
+  subset.df <- goals.df %>%
+    select(Goal, Goal_Description) %>%
+    unique() %>%
+    arrange(Goal)
   for (i in 1:nrow(subset.df)) {
     goal_row <- subset.df[i, ]
     goal_info <- paste0("Goal ", goal_row[1], ". ", goal_row[2], ":")
     tl[[i]] <- tagList(fluidRow(
-      column(width = 12,
-
+      column(
+        width = 12,
         numericInput(
           inputId = ns(paste0("goal", i)),
-          label = goal_info, value = 0, min = 0, max = 5, step = 1),#, minWidth = 150),
+          label = goal_info, value = 0, min = 0, max = 5, step = 1
+        ), # , minWidth = 150),
 
 
-        div(style="display: inline-block;vertical-align:top;;",goals_table(i)),
-
-
-
-    )), if(i != nrow(goals.df)){hr()})
+        div(style = "display: inline-block;vertical-align:top;;", goals_table(i)),
+      )
+    ), if (i != nrow(goals.df)) {
+      hr()
+    })
   }
   return(tl)
 }
@@ -438,33 +431,35 @@ make_numeric_inputs <- function(goals.df, id) {
 #' @export
 #'
 #' @examples
-remove_nas_from_pt<- function(pt.df) {
+remove_nas_from_pt <- function(pt.df) {
 
   # pt.df1 <-
   #   pt.df %>% dplyr::select(-all_of(metrics_to_remove))
 
-  #find which columns have na values
-  na_cols <-pt.df %>%
-   dplyr::select_if(~ any(is.na(.))) %>% colnames()
+  # find which columns have na values
+  na_cols <- pt.df %>%
+    dplyr::select_if(~ any(is.na(.))) %>%
+    colnames()
 
   cleaned_pt <- pt.df %>% dplyr::select(-all_of(na_cols))
-#to do remove cols from pt
+  # to do remove cols from pt
   return(list("cleaned_pt" = cleaned_pt, "na_cols" = na_cols))
 }
 
-clean_mcda_inputs <- function(ex_user_metrics,na_cols=NULL){
+clean_mcda_inputs <- function(ex_user_metrics, na_cols = NULL) {
 
-  #ex_user_metrics<- ex_user_metrics %>% column_to_rownames("Name")
+  # ex_user_metrics<- ex_user_metrics %>% column_to_rownames("Name")
   # zero.weights <- ex_user_metrics %>% dplyr::filter(Weight == 0) %>%
   #   dplyr::pull("Criteria Name")
   cleaned.df <- ex_user_metrics %>% dplyr::filter(
-    !`Criteria_Name` %in% na_cols)
+    !`Criteria_Name` %in% na_cols
+  )
 
   return(cleaned.df)
 }
 
 #
-#Testing
+# Testing
 #
 # performanceTable <- subbasin_data %>%  select_if(is.numeric) %>% na.omit() %>% head(30)
 # c <- ncol(performanceTable)
@@ -490,15 +485,16 @@ clean_mcda_inputs <- function(ex_user_metrics,na_cols=NULL){
 #   mutate(Weight=0) %>% clean_mcda_inputs()
 #
 # BB <- remove_nas_from_pt(pt.df = pt, metrics_to_remove = AA$zero.weights)
-#normalizePT(performanceTable = subbasin_data)
+# normalizePT(performanceTable = subbasin_data)
 
-mcda_scatter<-function(df){
-  df %>% rownames_to_column("SWSID") %>%
+mcda_scatter <- function(df) {
+  df %>%
+    rownames_to_column("SWSID") %>%
     # group_by(score) %>%
     e_charts(phi_minus) %>%
-    e_scatter(serie = phi_plus,size = score,bind=SWSID) %>%
-    e_x_axis(inverse=TRUE) %>%
-    #e_axis(axis = c('x','y'), show=FALSE) %>%
+    e_scatter(serie = phi_plus, size = score, bind = SWSID) %>%
+    e_x_axis(inverse = TRUE) %>%
+    # e_axis(axis = c('x','y'), show=FALSE) %>%
     e_tooltip(
       formatter = htmlwidgets::JS("
       function(params){
@@ -507,11 +503,14 @@ mcda_scatter<-function(df){
                 '<br />ϕ- ' + params.value[1] +
                 '<br />score: ' + params.value[2])
                 }
-    ")) %>%
-    #e_toolbox("dataView") %>%
-    e_legend(FALSE) %>%  # hide legend
-    e_mark_line(data = list(xAxis = 0), title = "Φ+ (Relative Strength)",
-                label = list(position = "middle")) %>%
+    ")
+    ) %>%
+    # e_toolbox("dataView") %>%
+    e_legend(FALSE) %>% # hide legend
+    e_mark_line(
+      data = list(xAxis = 0), title = "Φ+ (Relative Strength)",
+      label = list(position = "middle")
+    ) %>%
     e_title("Relative Scores") %>%
     #         subtext =
     #           "Larger-sized circles denote higher-scoring subbasins.
@@ -521,114 +520,121 @@ mcda_scatter<-function(df){
     #         subbasins with relatively more weakness than other subbasins.
     #         See the full tally of metric scores
     #         in the downloadable csv file.") %>%  # Add title & subtitle
-    e_mark_line(data = list(yAxis = 0), title = "Φ- (Relative Weakness)",  label = list(position = "middle")) %>%
-    e_visual_map(score,dimension=2,
-                 inRange = list(color = king_co_palette)) %>%
-    e_toolbox_feature(c("saveAsImage","magicType","dataView"))
+    e_mark_line(data = list(yAxis = 0), title = "Φ- (Relative Weakness)", label = list(position = "middle")) %>%
+    e_visual_map(score,
+      dimension = 2,
+      inRange = list(color = king_co_palette)
+    ) %>%
+    e_toolbox_feature(c("saveAsImage", "magicType", "dataView"))
 }
 
 
-get_pretty_names <- function(vals){
+get_pretty_names <- function(vals) {
   return_vec <- vector()
   for (i in 1:length(vals)) {
-    if(vals[i] %in% metrics$Name){
-      #if in list, replace with new name
+    if (vals[i] %in% metrics$Name) {
+      # if in list, replace with new name
       newnm <- metrics$Pretty_name[which(metrics$Name == vals[i])]
-    }else{
-      #else use old name
+    } else {
+      # else use old name
       newnm <- vals[i]
     }
-    return_vec <- c(return_vec,newnm)
-
+    return_vec <- c(return_vec, newnm)
   }
   return(return_vec)
-  #tibble(Name = vals) %>% left_join(metrics) %>% pull(Pretty_name)
+  # tibble(Name = vals) %>% left_join(metrics) %>% pull(Pretty_name)
 }
-make_info <- function(words){
+make_info <- function(words) {
   shinyWidgets::dropdownButton(
     size = "xs",
     inputId = "mydropdown",
-    label = 'more info', #NULL,
-    #icon = "info",
+    label = "more info", # NULL,
+    # icon = "info",
     status = "light",
     circle = FALSE,
     helpText(words)
-  )}
+  )
+}
 
-goals_table <- function(goal_num=1){
- goal.table <-  metrics %>% dplyr::filter(Goal == goal_num) %>%
+goals_table <- function(goal_num = 1) {
+  goal.table <- metrics %>%
+    dplyr::filter(Goal == goal_num) %>%
     mutate(Goal = paste0(Goal, ". ", Goal_Description)) %>%
     mutate(Subgoals = paste(Subgoal, Subgoal_Description)) %>%
     mutate(Metrics = Pretty_name) %>%
-    dplyr::select(c(Subgoals,Metrics)) %>%
+    dplyr::select(c(Subgoals, Metrics)) %>%
     dplyr::arrange(Subgoals, Metrics) %>%
     reactable(
       groupBy = c("Subgoals"),
       bordered = TRUE
     )
 
- return( shinyWidgets::dropdownButton(
-   size = "xs",
-   inputId = "mydropdown",
-   label = 'show subgoals & metrics', #NULL,
-   #icon = "info",
-   status = "light",
-   circle = FALSE,
-   width = 500,
-  goal.table))
-
+  return(shinyWidgets::dropdownButton(
+    size = "xs",
+    inputId = "mydropdown",
+    label = "show subgoals & metrics", # NULL,
+    # icon = "info",
+    status = "light",
+    circle = FALSE,
+    width = 500,
+    goal.table
+  ))
 }
 
-uc_goal_chart <- function(uc){
-
+uc_goal_chart <- function(uc) {
   uc.long <- uc %>%
-    pivot_longer(-c(SWSID,score,score_rank)) %>%
-    left_join(metrics,by=(c('name'='Name'))) #%>%
-   # mutate(Goal = as.numeric(Goal))
+    pivot_longer(-c(SWSID, score, score_rank)) %>%
+    left_join(metrics, by = (c("name" = "Name"))) # %>%
+  # mutate(Goal = as.numeric(Goal))
 
   uc.goals <- uc.long %>%
-    group_by(SWSID,Goal,Goal_Description,score,score_rank) %>%
+    group_by(SWSID, Goal, Goal_Description, score, score_rank) %>%
     summarise(value = sum(value)) %>%
     ungroup() %>%
-    mutate(value = value %>%
-             #scales::rescale(to = c(-1,1)) %>%
-             round(2),
-           basin_name = paste0(score_rank, ') Subbasin ',SWSID)
+    mutate(
+      value = value %>%
+        # scales::rescale(to = c(-1,1)) %>%
+        round(2),
+      basin_name = paste0(score_rank, ") Subbasin ", SWSID)
     )
   a_chart <-
     apex(
       uc.goals,
-      type='bar',
-      mapping = aes(x=Goal,y=value),
+      type = "bar",
+      mapping = aes(x = Goal, y = value),
       toolbar = list(show = FALSE)
-      #height = 400,
+      # height = 400,
     ) %>%
-
     ax_plotOptions(
-      bar=bar_opts(
+      bar = bar_opts(
         horizontal = TRUE,
-        #borderRadius = 4,
-        barHeight = '60%',
-        columnWidth = '60%',
+        # borderRadius = 4,
+        barHeight = "60%",
+        columnWidth = "60%",
         dataLabels = list(position = "middle"),
         distributed = TRUE
-      )) %>%
-    ax_xaxis(type = "categories"
-      #min=-1,max=1,tickAmount = 4,
-    #categories = c("Goal 1",'Goal 2','Goal 3','Goal 4')
+      )
+    ) %>%
+    ax_xaxis(
+      type = "categories"
+      # min=-1,max=1,tickAmount = 4,
+      # categories = c("Goal 1",'Goal 2','Goal 3','Goal 4')
     ) %>%
     add_vline(0, color = "#999", dash = 0) %>%
     ax_dataLabels(
       enabled = TRUE,
-      textAnchor = 'start',
-      style=list(fontSize = '9px',fontWeight = 300, colors=c('#555'))) %>%
+      textAnchor = "start",
+      style = list(fontSize = "9px", fontWeight = 300, colors = c("#555"))
+    ) %>%
     ax_facet_wrap(
       vars(basin_name),
-      scales = "fixed",ncol=3,chart_height = "150px") %>%
+      scales = "fixed", ncol = 3, chart_height = "150px"
+    ) %>%
     ax_chart(
-        toolbar = list(show = FALSE)) %>% #%>%
+      toolbar = list(show = FALSE)
+    ) %>% # %>%
     ax_theme(palette = "pallete2") %>%
-    ax_legend(show=FALSE)
+    ax_legend(show = FALSE)
 
   return(a_chart)
 }

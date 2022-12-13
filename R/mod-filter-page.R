@@ -252,15 +252,7 @@ filter_page_server <- function(id, rv) {
     }) %>% bindEvent(input$reset)
 
 
-    # # add jursidction if selected
-    # observe({
-    #
-    #
-    #   leafletProxy("map", data = city_bounds()) %>%
-    #     clearShapes() %>%
-    #   addPolygons()
-    #
-    # })
+
 
     table_filtered_ids <- reactive({
       req(rv$base_data)
@@ -325,8 +317,8 @@ filter_page_server <- function(id, rv) {
             # SWSID,
             WRIA = WQBE_basin,
             #  Imperviousness,
-            `Shellfish Beaches` =  Presence_of_Shellfish,
-            `Phosphorus Sensitive Lakes` =  Drains_to_P_Sensitive_Lake,
+            `Shellfish Beaches` = Presence_of_Shellfish,
+            `Phosphorus Sensitive Lakes` = Drains_to_P_Sensitive_Lake,
             Headwaters = Is_Headwater_Basin,
             `Swimming Beaches` = Contains_Swimming_Beaches
           )
@@ -334,8 +326,8 @@ filter_page_server <- function(id, rv) {
     })
 
     output$hot <- renderDT(
-      datatable(#colnames = display_table()  %>% colnames() %>% get_pretty_names(),
-      display_table(),
+      datatable( # colnames = display_table()  %>% colnames() %>% get_pretty_names(),
+        display_table(),
       ),
       rownames = TRUE, server = FALSE
     )
@@ -352,24 +344,14 @@ filter_page_server <- function(id, rv) {
 
 
 
-    output$map <- renderLeaflet({
-basemap #%>%
-        # addLayersControl(
-        #   position = "bottomright", options = layersControlOptions(collapsed = FALSE),
-        #   baseGroups = c("Base", "Satellite", "Grey"),
-        #   overlayGroups = c("City Limits", "All Subbasins")
-        # ) %>%
-        # addPolygons(
-        #   data = subbasin_shps, weight = 1, opacity = 0.6,
-        #   color = "#9E9E9E", fillColor = "#d2d6de",
-        #   group = "All Subbasins", options = list(zIndex = 100)
-        # ) %>%
-        # addPolygons(data = cities_shp, group = "City Limits") %>%
-        # hideGroup("City Limits")
-    })
+
 
     shps_filtered <- reactive({
       subbasin_shps[which(subbasin_shps$SWSID %in% filtered_ids()), ]
+    })
+
+    output$map <- renderLeaflet({
+      basemap
     })
 
     # map observers  -------------------------------------------------------
@@ -382,7 +364,8 @@ basemap #%>%
           data = shps_filtered(), weight = 2.5, color = "#28a745",
           fillColor = "#01ff70",
           group = "Selected Subbasins", options = list(zIndex = 101)
-        ) %>% clearControls() %>%
+        ) %>%
+        clearControls() %>%
         addLayersControl(
           position = "bottomright", options = layersControlOptions(collapsed = FALSE),
           baseGroups = c("Base", "Satellite", "Grey"),
@@ -393,11 +376,13 @@ basemap #%>%
     observe({
       leafletProxy("map") %>%
         clearGroup("city_bounds") %>%
-        addPolygons(data = city_bounds(), dashArray = c("2, 2"), fillOpacity = 0.1,
-                    weight = 1.5, color = "black", group = "city_bounds", options = list(zIndex = 200))
+        addPolygons(
+          data = city_bounds(), dashArray = c("2, 2"), fillOpacity = 0.1,
+          weight = 1.5, color = "black", group = "city_bounds", options = list(zIndex = 200)
+        )
     }) %>% bindEvent(city_bounds(), ignoreInit = TRUE, ignoreNULL = TRUE)
 
-# Click events ------------------------------------------------------------
+    # Click events ------------------------------------------------------------
 
     # observeEvent(input$map_shape_click, {
     #
@@ -444,11 +429,13 @@ ui <- fluidPage(
 )
 
 server <- function(input, output, session) {
-  rv <- reactiveValues(base_data = subbasin_data, filtered_data = NULL,
-                       filtered_shps = NULL, top_basins = NULL, top_shps = NULL)
+  rv <- reactiveValues(
+    base_data = subbasin_data, filtered_data = NULL,
+    filtered_shps = NULL, top_basins = NULL, top_shps = NULL
+  )
 
   # rv <- reactiveValues(base_data = subbasin_data,filtered_data = NULL)
- outvals <- reactive(filter_page_server("test_filter", rv))
+  outvals <- reactive(filter_page_server("test_filter", rv))
 }
 
 shinyApp(ui, server)

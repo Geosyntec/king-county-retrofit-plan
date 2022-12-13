@@ -1,51 +1,49 @@
 debugUI <- function(id) {
   ns <- NS(id)
   tagList(
- # tableOutput(ns('OUT1')),
+    # tableOutput(ns('OUT1')),
     shinydashboardPlus::box(
       width = 12,
       leafletOutput(ns("map"))
-      ),
-  shinydashboardPlus::box(
-    width = 12, title = "shps Table", collapsible = TRUE,
-  DTOutput(ns('filtered_shps'))
-  ),
-  shinydashboardPlus::box(
-    width = 12, title = "Filtered Table", collapsible = TRUE,
-    DTOutput(ns('filtered_data_table'))
-  ),
-
+    ),
+    shinydashboardPlus::box(
+      width = 12, title = "shps Table", collapsible = TRUE,
+      DTOutput(ns("filtered_shps"))
+    ),
+    shinydashboardPlus::box(
+      width = 12, title = "Filtered Table", collapsible = TRUE,
+      DTOutput(ns("filtered_data_table"))
+    ),
   )
 }
 
-debugServer <- function(id,rv) {
+debugServer <- function(id, rv) {
   moduleServer(
     id,
     function(input, output, session) {
-      output$map <- renderLeaflet(leaflet(rv$filtered_shps) %>% addPolygons)
+      output$map <- renderLeaflet(leaflet(rv$filtered_shps) %>% addPolygons())
       output$base_data_table <- renderDT(DT::datatable(rv$filtered_shps,
-                                                       extensions = 'FixedColumns',
-                                                       options = list(
-                                                         dom = 't',
-                                                         scrollX = TRUE
-
-                                                       )
-                                         ))
-      output$filtered_data_table <- renderDT(DT::datatable(rv$filtered_data,
-                                                           extensions = 'FixedColumns',
-                                                           options = list(
-                                                             dom = 't',
-                                                             scrollX = TRUE
-
-                                                           )
+        extensions = "FixedColumns",
+        options = list(
+          dom = "t",
+          scrollX = TRUE
+        )
       ))
-
-})}
+      output$filtered_data_table <- renderDT(DT::datatable(rv$filtered_data,
+        extensions = "FixedColumns",
+        options = list(
+          dom = "t",
+          scrollX = TRUE
+        )
+      ))
+    }
+  )
+}
 library(shiny)
 
 ui <- fluidPage(
-  #theme = bs_theme(bg = "black", fg = "white"),
-debugUI('test')
+  # theme = bs_theme(bg = "black", fg = "white"),
+  debugUI("test")
 )
 
 server <- function(input, output, session) {
@@ -56,5 +54,4 @@ server <- function(input, output, session) {
   )
   debugServer("test", rv)
 }
-shinyApp(ui, server)# %>% run_with_themer()
-
+shinyApp(ui, server) # %>% run_with_themer()

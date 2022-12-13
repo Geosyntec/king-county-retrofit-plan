@@ -2,26 +2,37 @@ library(here)
 library(readr)
 library(dplyr)
 
-metrics <- read_csv(here("data-raw","metrics_config.csv"),
-                           col_types = cols(Goal = col_character(),
-                                            Subgoal = col_character())) |>
-  mutate(orientation_protect = case_when(orientation_protect == "Minimize" ~ "min",
-                                         orientation_protect == "Maximize" ~ "max")) |>
-  mutate(orientation_restore = case_when(orientation_restore == "Minimize" ~ "min",
-                                         orientation_restore == "Maximize" ~ "max"))
+metrics <- read_csv(here("data-raw", "metrics_config.csv"),
+  col_types = cols(
+    Goal = col_character(),
+    Subgoal = col_character()
+  )
+) |>
+  mutate(orientation_protect = case_when(
+    orientation_protect == "Minimize" ~ "min",
+    orientation_protect == "Maximize" ~ "max"
+  )) |>
+  mutate(orientation_restore = case_when(
+    orientation_restore == "Minimize" ~ "min",
+    orientation_restore == "Maximize" ~ "max"
+  ))
 
-#calculate the mean value for each metric
+# calculate the mean value for each metric
 load("~/Documents/repos/king-county-retrofit-plan/data/subbasin_data.rda")
 
-mean_data <- subbasin_data %>% select_if(is.numeric) %>% colMeans(na.rm = TRUE) %>%
+mean_data <- subbasin_data %>%
+  select_if(is.numeric) %>%
+  colMeans(na.rm = TRUE) %>%
   as.data.frame() %>%
   `colnames<-`("Indifference_abs") %>%
   rownames_to_column("Name")
 # multiply threshold times mean value
-metrics <- mean_data %>% as.data.frame() %>% merge(metrics)
+metrics <- mean_data %>%
+  as.data.frame() %>%
+  merge(metrics)
 
 
-#metrics <- set_names(metrics,goal_names)
+# metrics <- set_names(metrics,goal_names)
 #>
 #> Attaching package: 'jsonlite'
 #> The following object is masked from 'package:purrr':
@@ -65,7 +76,6 @@ metrics <- mean_data %>% as.data.frame() %>% merge(metrics)
 
 
 
-#usethis::use_data(goals_dict,overwrite = TRUE)
-#usethis::use_data(goals,overwrite = TRUE)
-usethis::use_data(metrics,overwrite = TRUE)
-
+# usethis::use_data(goals_dict,overwrite = TRUE)
+# usethis::use_data(goals,overwrite = TRUE)
+usethis::use_data(metrics, overwrite = TRUE)

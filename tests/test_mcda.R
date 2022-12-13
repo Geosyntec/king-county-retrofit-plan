@@ -1,18 +1,18 @@
-source(here::here('R','promethee_2.R'))
+source(here::here("R", "promethee_2.R"))
 library(tidyverse)
-#test using original Bertand Data Set
+# test using original Bertand Data Set
 
-Evaluations = data.frame(
+Evaluations <- data.frame(
   name = c("Tourism B", "luxury 1", "Tourism A", "Luxury 2", "Economic", "Sport"),
-  Price = c(25500,38000,26000,35000,15000,29000),
-  Power = c(85,90,75,85,50,110),
-  Consumption = c(7,8.5,8,9,7.5,9),
-  Habitability = c(4,4,3,5,2,1),
-  Comfort = c(3,5,3,4,1,2)
+  Price = c(25500, 38000, 26000, 35000, 15000, 29000),
+  Power = c(85, 90, 75, 85, 50, 110),
+  Consumption = c(7, 8.5, 8, 9, 7.5, 9),
+  Habitability = c(4, 4, 3, 5, 2, 1),
+  Comfort = c(3, 5, 3, 4, 1, 2)
 )
 
 
-minmax = c(
+minmax <- c(
   "min",
   "max",
   "min",
@@ -22,16 +22,16 @@ minmax = c(
   # "min",
   # "max"
 )
-weight =
- c(2,
-           2,
-           3,
-   1,
-   1
+weight <-
+  c(
+    2,
+    2,
+    3,
+    1,
+    1
+  )
 
-   )
-
-aaa<-promethee_2(dataset = Evaluations,name_col = "name",weighting = weight,minmax = minmax)
+aaa <- promethee_2(dataset = Evaluations, name_col = "name", weighting = weight, minmax = minmax)
 aaa
 outrankingflows <- aaa[[2]]
 
