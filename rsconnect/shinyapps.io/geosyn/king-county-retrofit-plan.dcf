@@ -5,10 +5,10 @@ account: geosyn
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 6766769
-bundleId: 6606777
+bundleId: 6633718
 url: https://geosyn.shinyapps.io/king-county-retrofit-plan/
-when: 1670444468.06259
-lastSyncTime: 1670444468.0626
+when: 1670971096.74692
+lastSyncTime: 1670971096.74694
 asMultiple: FALSE
 asStatic: FALSE
 ignoredFiles: .Rbuildignore|DESCRIPTION|js/bar.js|js/dendrogram.js|LICENSE|man/run_app.Rd|README.md|verification/weighted_sum_table.xlsx|correlation_analysis|data-raw|dev|tests

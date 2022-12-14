@@ -195,10 +195,7 @@ filter_page_UI <- function(id) {
 filter_page_server <- function(id, rv) {
   moduleServer(id, function(input, output, session) {
     # assign reactive values to module variables
-
-
     wria_vals <- reactive(input$wriapicker)
-
     city_vals <- reactive(input$jurisdictionpicker)
 
     swimming <- reactive((if (input$check1) {
