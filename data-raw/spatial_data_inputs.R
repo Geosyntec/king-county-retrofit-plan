@@ -30,7 +30,7 @@ subbasin_simplified <- ms_simplify(subbasin_shps,
 # system.time({
 #   leaflet(subbasin_simplified) %>% addPolygons()
 # })
-subbasin_shps <- subbasin_simplified %>% select(c(SWSID, geometry))
+subbasin_shps <- subbasin_simplified %>% select(c(SWSID, geometry)) %>% mutate(SWSID2 = SWSID)
 
 usethis::use_data(subbasin_shps, overwrite = TRUE)
 
@@ -93,3 +93,8 @@ city_names <- cities_shp %>%
 
 usethis::use_data(cities_shp, overwrite = TRUE)
 usethis::use_data(city_names, overwrite = TRUE)
+
+
+
+city_shed_dict <- cities_shp %>% sf::st_intersection(subbasin_shps) %>% st_drop_geometry()
+usethis::use_data(city_shed_dict, overwrite = TRUE)
