@@ -130,15 +130,15 @@ server <- function(input, output, session) {
   observe(
     updateTabItems(session,"tabs","about"))  %>% bindEvent(input$learn)
 
-  rv <- reactiveValues(base_data = subbasin_data,filtered_data = NULL,filtered_shps=NULL, top_basins = NULL, top_shps = NULL)
-  #mock_filtered <- reactive(subbasin_data %>% filter(WQBE_basin ==    "White")) #%>% sample_n(100))
-  rv2 <- reactiveValues(filtered_data = subbasin_data %>% select_if(is.numeric),top_basins = NULL,filtered_shps=subbasin_shps,  top_basins = NULL, top_shps = NULL)
-  # filtered_results <-
-  #filtered_results <- reactive
-  filtered_data <- reactive(filter_page_server("filter-main",rv))
+  rv <- reactiveValues(base_data = subbasin_data,base_shps = subbasin_shps,  filtered_data = NULL,filtered_shps=NULL, top_basins = NULL, top_shps = NULL)
 
-  #observe(print(filtered_data()))
+  rv2 <- reactiveValues(filtered_data = NULL, top_basins = NULL,filtered_shps=subbasin_shps,  top_basins = NULL, top_shps = NULL)
 
+#get filtered data from filter-main
+filtered_data <- reactive(filter_page_server("filter-main",rv))
+
+
+#pass filtered data to second reactive values
 
 
   observe({

@@ -21,7 +21,7 @@ load(here::here("data", "wrias.rda"))
 load(here::here("data", "subbasin_data.rda"))
 load(here::here("data", "subbasin_shps.rda"))
 load(here::here("data", "city_names.rda"))
-load(here::here("data", "city_lookup.rda"))
+load(here::here("data", "city_shed_dict.rda"))
 load(here::here("data", "cities_shp.rda"))
 load(here::here("data", "metrics.rda"))
 source(here::here("R", "promethee.R"))
@@ -51,20 +51,20 @@ basemap <- leaflet() %>%
   ) %>%
   addPolygons(
     data = subbasin_shps, weight = 0.4, fillOpacity = 0.1,
-    color = "#593D3B", fillColor = "#d2d6de",
+    color = "#593D3B", fillColor = "#d2d6de", layerId = ~SWSID,
     group = "All Subbasins", options = list(zIndex = 100)
   ) %>%
-  addPolygons(
-    data = cities_shp, group = "City Limits", dashArray = 5,
-    color = "#002673", weight = 2, fill = FALSE,
-    fillOpacity = 0.1,
-    label = ~CITYNAME,
-    highlightOptions = highlightOptions(
-      weight = 6, color = "yellow", fill = TRUE, dashArray = 0)
-  ) %>%
+  # addPolygons(
+  #   data = cities_shp, group = "City Limits", dashArray = 5,
+  #   color = "#002673", weight = 2, fill = FALSE,
+  #   fillOpacity = 0.1,
+  #   label = ~CITYNAME,
+  #   highlightOptions = highlightOptions(
+  #     weight = 6, color = "yellow", fill = TRUE, dashArray = 0)
+  # ) %>%
   addPolygons(
     data = wrias, group = "WRIA Outlines",
-    options = list(zIndex = 200), color = "#2C8C99",
+    options = list(zIndex = 50), color = "#2C8C99",
     weight = 0.8,
     label = ~WQBE_basin,
     highlightOptions = highlightOptions(weight = 3),
@@ -72,7 +72,7 @@ basemap <- leaflet() %>%
     opacity = 1, fillOpacity = 0
   ) %>%
   hideGroup("City Limits")
-basemap
+
 
 king_co_palette <- c("#FFE39F", "#B2CB9A", "#6FB084", "#3B925D", "#1D7324")
 
