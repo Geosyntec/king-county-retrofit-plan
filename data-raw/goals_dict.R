@@ -16,8 +16,7 @@ metrics <- read_csv(here("data-raw", "metrics_config.csv"),
     orientation_restore == "Minimize" ~ "min",
     orientation_restore == "Maximize" ~ "max"
   ))
-
-# calculate the mean value for each metric
+fa
 load("~/Documents/repos/king-county-retrofit-plan/data/subbasin_data.rda")
 
 mean_data <- subbasin_data %>%

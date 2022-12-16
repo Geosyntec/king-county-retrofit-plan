@@ -212,6 +212,7 @@ filter_page_server <- function(id, rv) {
     )
 
 
+
     swimming <- reactive((if (input$check1) {
       return(c(TRUE))
     } else {

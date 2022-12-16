@@ -400,13 +400,14 @@ criteria_page_server2 <- function(id, rv2) {
       output$report1 <- renderDT(user_weights.df())
       output$report2 <- renderDT(mcda_results()[["UnicriterionNetFlows"]])
 
+      results_data <- reactive(mcda_results()[["out_flows"]] %>%
+        select(c(score, score_rank)) %>%
+        rownames_to_column("SWSID") %>%
+        relocate(score_rank, .before = 1))
       ### mcda results datatable -----------------------------------------------------------------
       output$mcda_results <- renderDT(
         datatable(
-          mcda_results()[["out_flows"]] %>%
-            select(c(score, score_rank)) %>%
-            rownames_to_column("SWSID") %>%
-            relocate(score_rank, .before = 1),
+          results_data(),
           rownames = FALSE,
           colnames = c("Rank", "SWSID", "Score"),
           extensions = "Buttons",
@@ -548,7 +549,6 @@ criteria_page_server2 <- function(id, rv2) {
 # cross talk observers --------------------------------
 
 ## table observer --------------------------------------
-
       observeEvent(input$mcda_results_rows_selected, {
 
         basin_list <-eventReactive(input$mcda_results_rows_selected, {
@@ -574,6 +574,40 @@ criteria_page_server2 <- function(id, rv2) {
 
 
       })
+
+
+
+## map observer ----------------------------------------
+      # observer for map click ------------------------------
+      observeEvent(input$map_shape_click,
+                   {
+                     map_click_info<- eventReactive(input$map_shape_click,{
+                       input$map_shape_click
+                     })
+#check to see if id is in table
+                     click_id <- reactive(input$map_shape_click$id)
+                     if(!is.null(click_id())){
+
+                     print(click_id())
+                     }
+
+                     #update map
+                     map_click_shp <- reactive(
+                       top_shps() %>% filter(SWSID ==
+                                              map_click_info()['id']))
+# #update map
+leafletProxy('map') %>%
+                       clearGroup("selected") %>%
+                       # flyTo(map_click_info()['lng'],map_click_info()['lat'],12) %>%
+                       addPolygons(data = map_click_shp(),color = 'yellow',group = "selected")
+
+# #update table
+#
+DT::dataTableProxy("mcda_results") %>%
+                       selectRows(
+                         which(results_data()['SWSID'] == click_id()))
+                   }
+      )
 
       # Charts ------------------------------------------------------------------
 
