@@ -16,6 +16,7 @@ require(shinyjs)
 require(fresh)
 require(shinyvalidate)
 require(apexcharter)
+require(openxlsx)
 
 load(here::here("data", "wrias.rda"))
 load(here::here("data", "subbasin_data.rda"))

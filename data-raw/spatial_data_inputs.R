@@ -42,7 +42,7 @@ wrias <- subbasin_simplified %>%
 
 usethis::use_data(wrias, overwrite = TRUE)
 # subbasin metrics --------------------------------------------------------
-subbasin_metrics <- read_excel("data-raw/source_data/20220722_KC_SPS_Complete_Metrics_Join_Only.xls") %>%
+subbasin_metrics <- read_excel("data-raw/source_data/20221222_Attribute_Join_Table.xls") %>%
   mutate_at(
     c(
       "Presence_of_Shellfish",
@@ -77,10 +77,10 @@ cities_shp <-
     "King_Co_Incorporated_Areas_Dissolved2.shp"
   )) %>%
   mutate(CITYNAME = if_else(CITYNAME == "King County", "King County (Unincorporated)", CITYNAME)) %>%
-  ms_simplify(
-    keep = 0.30,snap_interval = 10,
-    keep_shapes = FALSE
-  ) %>%
+  #ms_simplify(
+   # keep = 0.30,snap_interval = 10,
+  #  keep_shapes = FALSE
+  #) %>%
   st_set_crs(base_crs)
 
 
@@ -95,6 +95,11 @@ usethis::use_data(cities_shp, overwrite = TRUE)
 usethis::use_data(city_names, overwrite = TRUE)
 
 
+city_shed_dict <- read_excel("data-raw/source_data/Subbasin_Jurisdictions_Buffered_230104.xls") %>%  select(c(
+  CITYNAME = Jurisdiction, SWSID
+)) %>% mutate(CITYNAME =
+  recode(CITYNAME, 'King County' = "King County (Unincorporated)"))
 
-city_shed_dict <- cities_shp %>% sf::st_intersection(subbasin_shps) %>% st_drop_geometry()
+
+# city_shed_dict <- cities_shp %>% sf::st_intersection(subbasin_shps) %>% st_drop_geometry()
 usethis::use_data(city_shed_dict, overwrite = TRUE)

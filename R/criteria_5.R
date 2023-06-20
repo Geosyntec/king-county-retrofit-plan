@@ -95,7 +95,7 @@ criteria_page_UI2 <- function(id) {
         shinydashboard::tabBox(
           width = NULL,
           tabPanel(
-            width = 12, title = "Table",
+            width = 12, title = "Results Table",
             shinyWidgets::panel(
               DTOutput(ns("mcda_results"))
             )
@@ -103,19 +103,14 @@ criteria_page_UI2 <- function(id) {
           ### results by goal -------------------------------------
           tabPanel(
             width = 12,
-            title = "Results by Goal",
+            title = "Chart Results by Goal",
             shinycssloaders::withSpinner(
               apexfacetOutput(ns("uc_goals"))
             )
           ),
           tabPanel(
-            width = 12, title = "reports",
-            strong("Scenario"),
-            textOutput(ns("scenario")),
-            strong("User Weights"),
-            DTOutput(ns("report1")),
-            strong("all metrics"),
-            DTOutput(ns("report2"))
+            width =12, title = "Download Report",
+            downloadButton(ns('download_excel'),label = "Download Excel Report")
           )
         )
       )
@@ -131,6 +126,9 @@ criteria_page_server2 <- function(id, rv2) {
     id,
     function(input, output, session) {
       ns <- NS(id)
+
+
+
       all_metrics <- reactive({
         metrics
       })
@@ -308,13 +306,9 @@ criteria_page_server2 <- function(id, rv2) {
 
       min_max.vec <- reactive({
         if (input$orientation_select == "Protection") {
-          cleaned_user_table()[["orientation_protect"]] # %>%
-          # "names<-"(criteria_names() %>%
-          # select(-all_of(removed_cols()))
+          cleaned_user_table()[["orientation_protect"]]
         } else {
-          cleaned_user_table()[["orientation_restore"]] # %>%
-          # "names<-"(criteria_names()) %>%
-          #      select(-all_of(removed_cols()))
+          cleaned_user_table()[["orientation_restore"]]
         }
       })
 
@@ -334,13 +328,10 @@ criteria_page_server2 <- function(id, rv2) {
       })
 
       top_PT <- reactive({
-        # req(ncol(cleaned_user_metrics() > 0 ))
-        # req(cleaned_criteria())
-        # req(input$n)
         scaled_weighted_sum(
           performanceTable = cleaned_pt(),
           weights = weights_oriented()
-        ) # ,num_to_return = input$n)
+        )
       })
 
       output$top_basins <- renderDT(
@@ -386,12 +377,7 @@ criteria_page_server2 <- function(id, rv2) {
 
       ## tables ------------------------------------------------------------------
       out_tables <- reactive(
-        # metrics %>%
-        # select(c(Metric_no, Name, Goal, Subgoal, Goal_Description,
-        #       Subgoal_Description)) %>%
-        # add_column(
         user_edits_all_metrics()
-        # cleaned_user_table()[["Weight"]] %>% as.data.frame()
       )
 
 
@@ -424,25 +410,7 @@ criteria_page_server2 <- function(id, rv2) {
 
 
 
-      # # Render a bar chart in the background of the cell
-      # bar_style <- function(width = 1, fill = "#e6e6e6", height = "75%",
-      #                       align = c("left", "right"), color = NULL) {
-      #   align <- match.arg(align)
-      #   if (align == "left") {
-      #     position <- paste0(width * 100, "%")
-      #     image <- sprintf("linear-gradient(90deg, %1$s %2$s, transparent %2$s)", fill, position)
-      #   } else {
-      #     position <- paste0(100 - width * 100, "%")
-      #     image <- sprintf("linear-gradient(90deg, transparent %1$s, %2$s %1$s)", position, fill)
-      #   }
-      #   list(
-      #     backgroundImage = image,
-      #     backgroundSize = paste("100%", height),
-      #     backgroundRepeat = "no-repeat",
-      #     backgroundPosition = "center",
-      #     color = color
-      #   )
-      # }
+
 
 
 
@@ -453,23 +421,7 @@ criteria_page_server2 <- function(id, rv2) {
           rownames_to_column("SWSID") %>%
           relocate(score_rank, .before = 1)
       )
-      # output$tbl2 <- renderReactable(
-      #   reactable(
-      #     mcda_results()[["out_flows"]] %>%
-      #       rownames_to_column("SWSID") %>%
-      #       relocate(score_rank, .before = 1),
-      #     columns = list(
-      #       score = colDef(
-      #         style = function(value) {
-      #           bar_style(width = value / 1, fill = "#2c5e77", color = "#fff")
-      #         },
-      #         align = "left",
-      #         format = colFormat(digits = 1)
-      #       )
-      #     ),
-      #     bordered = TRUE
-      #   )
-      # )
+
 
       # top items to return
       return_vals <- 9
@@ -520,10 +472,6 @@ criteria_page_server2 <- function(id, rv2) {
             labelOptions = labelOptions(
               noHide = TRUE, textOnly = TRUE,
               permanent = TRUE
-              # style = list(
-              #   color = "black",
-              #   textShadow = "0 0 4px white, 0 0 4px white, 0 0 4px white, 0 0 4px white, 0 0 4px white, 0 0 4px white, 0 0 4px white, 0 0 4px white, 0 0 4px white, 0 0 4px white, 0 0 4px white, 0 0 4px white, 0 0 4px white, 0 0 4px white, 0 0 4px white, 0 0 4px white, 0 0 4px white, 0 0 4px white, 0 0 4px white, 0 0 4px white"
-              # )
             ),
             weight = 1,
             color = "white",
@@ -598,7 +546,7 @@ criteria_page_server2 <- function(id, rv2) {
 # #update map
 leafletProxy('map') %>%
                        clearGroup("selected") %>%
-                       # flyTo(map_click_info()['lng'],map_click_info()['lat'],12) %>%
+
                        addPolygons(data = map_click_shp(),color = 'yellow',group = "selected")
 
 # #update table
@@ -620,15 +568,55 @@ DT::dataTableProxy("mcda_results") %>%
         renderApexfacet(
           uc_goal_chart(uc.df())
         )
-      # output$scatter_chart <- renderEcharts4r(mcda_scatter(mcda_results()[["out_flows"]]))
 
 
+
+# Download Handler ------------------------------------
+
+      output$download_excel <- downloadHandler(
+        #make list of tables to add
+        filename = function() {
+          paste0("subbasin_prioritization_",Sys.Date(),".xlsx")
+        },
+        content = function(file) {
+          tables = reactive({
+            list(
+                User_weights = user_weights.df(),
+                Criteria = cleaned_criteria() %>% round(4) %>%
+                  rownames_to_column("SWSID"),
+                Ranking = results_data(),
+                out_flows = mcda_results()[["out_flows"]]%>%
+                  rownames_to_column("SWSID"),
+                Unicriterion_net_flows = mcda_results()[["UnicriterionNetFlows"]]%>%
+                  rownames_to_column("SWSID") %>% t()
+            )
+            })
+          my_workbook = generate_reports(tables())
+          #insert title page
+          addWorksheet(my_workbook,sheetName = 'Summary')
+          writeData(wb = my_workbook,sheet = 6,
+                    x = c("Subbasin Prioritization Report",
+                          "King County Stormwater Retrofit Planner",
+                          "https://geosyn.shinyapps.io/king-county-retrofit-plan/",
+                          paste("Report Date:",Sys.Date() %>% as.character())
+                    )
+          )
+#style first page
+          style1 <- createStyle(border = "TopBottom", borderColour = "#4F81BD",fontSize = 18,
+                                textDecoration = 'bold')
+          addStyle(my_workbook, sheet = 6, style1, rows = 1, cols = 1:4)
+
+          #move summary to first sheet
+
+          worksheetOrder(my_workbook)<-c(6,1,2,3,4,5)
+          saveWorkbook(my_workbook, file)
+        }
+      )
 
 
 })}
 
-# library(shiny)
-# source("~/Documents/repos/king-county-retrofit-plan/R/aaa_global.R")
+
 ui <- dashboardPage(
   header = dashboardHeader(), sidebar = dashboardSidebar(), body =
     dashboardBody(
@@ -642,7 +630,7 @@ test_basins <- subbasin_data %>%
   mutate(BIBI = 0) %>%
   mutate(Sidewalk_Density = 0)
 
-# test_basins[which(is.na(test_basins %>% colSums()))] <- 0
+
 
 server <- function(input, output, session) {
   rv2 <- reactiveValues(

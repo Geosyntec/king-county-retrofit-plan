@@ -178,11 +178,11 @@ filter_page_UI <- function(id) {
               shinycssloaders::withSpinner(
                 DTOutput(outputId = ns("hot"))
               )
-            ),
-            tabPanel(
-              width = NULL, title = "Data Check",
-              verbatimTextOutput(ns("message"))
             )
+            # tabPanel(
+            #   width = NULL, title = "Data Check",
+            #   verbatimTextOutput(ns("message"))
+            # )
           )
         )
       )
@@ -234,9 +234,9 @@ filter_page_server <- function(id, rv) {
       return(c(TRUE, FALSE))
     }))
 
-    # city_bounds <- reactive({
-    #   cities_shp[cities_shp[, "CITYNAME", drop = TRUE] %in% city_vals(), ] %>% st_set_crs(project_crs)
-    # })
+    city_bounds <- reactive({
+      cities_shp[cities_shp[, "CITYNAME", drop = TRUE] %in% city_vals(), ] %>% st_set_crs(project_crs)
+    })
 
 #returns filterd ids based on city selection
 spatial_filter_ids <- reactive({
@@ -378,14 +378,14 @@ observe({
           color = "#593D3B", fillColor = "#d2d6de", layerId = ~SWSID,
           group = "All Subbasins", options = list(zIndex = 10)
         ) %>%
-        # addPolygons(
-        #   data = cities_shp, group = "City Limits", dashArray = 5,
-        #   color = "#002673", weight = 2, fill = FALSE,
-        #   fillOpacity = 0.1,
-        #   label = ~CITYNAME,
-        #   highlightOptions = highlightOptions(
-        #     weight = 6, color = "yellow", fill = TRUE, dashArray = 0)
-        # ) %>%
+        addPolygons(
+          data = cities_shp, group = "City Limits", dashArray = 5,
+          color = "#002673", weight = 2, fill = FALSE,
+          fillOpacity = 0.1,
+          label = ~CITYNAME,
+          highlightOptions = highlightOptions(
+            weight = 6, color = "yellow", fill = TRUE, dashArray = 0)
+        ) %>%
         addPolygons(
           data = wrias, group = "WRIA Outlines",
           options = #list(
@@ -396,8 +396,8 @@ observe({
           highlightOptions = highlightOptions(weight = 3),
           # fillColor = ~wria_pal(WQBE_basin),
           opacity = 1, fillOpacity = 0
-        )
-        ##hideGroup("City Limits")
+        ) %>%
+        hideGroup("City Limits")
     })
 
 # observers -------------------------------------------
@@ -407,33 +407,34 @@ observe({
     map_update <- function(){
       leafletProxy("map") %>%
         clearGroup("Selected Subbasins") %>%
-        removeLayersControl() %>%
+        #removeLayersControl() %>%
         addPolygons(
           data = rv$filtered_shps, weight = 2.5, color = "#28a745",
           fillColor = "#01ff70",opacity = 1.0,
           group = "Selected Subbasins",
           options = pathOptions(clickable = FALSE)
-        ) %>%
-        addLayersControl(
-          position = "bottomright", options = layersControlOptions(collapsed = FALSE),
-          baseGroups = c("Base", "Satellite", "Grey"),
-          overlayGroups = c("City Limits","Selected Subbasins", "All Subbasins", "WRIA Outlines")
         )
+      #%>%
+        # addLayersControl(
+        #   position = "bottomright", options = layersControlOptions(collapsed = FALSE),
+        #   baseGroups = c("Base", "Satellite", "Grey"),
+        #   overlayGroups = c("City Limits","Selected Subbasins", "All Subbasins", "WRIA Outlines")
+        # )
     }
     #proxy1 - add selected subbasins
     observeEvent(table_filtered_ids(), {
       map_update()
     })
 # selected city bounds
-    # observe({
-    #   leafletProxy("map") %>%
-    #     clearGroup("city_bounds") %>%
-    #     addPolygons(
-    #       data = city_bounds(), dashArray = c("2, 2"), fillOpacity = 0.1,
-    #       weight = 1.5, color = "black", group = "city_bounds", options = list(zIndex = 200)
-    #     )
-    # }) %>%
-    #   bindEvent(city_bounds(), ignoreInit = TRUE, ignoreNULL = TRUE)
+    observe({
+      leafletProxy("map") %>%
+        clearGroup("City Limits") %>%
+        addPolygons(
+          data = city_bounds(), dashArray = c("2, 2"), fillOpacity = 0.1,
+          weight = 1.5, color = "black", group = "City Limits",  options = pathOptions(clickable = FALSE)
+        )
+    }) %>%
+      bindEvent(city_bounds(), ignoreInit = TRUE, ignoreNULL = TRUE)
 
     ### map click events ------------------------------------------------------------
 
