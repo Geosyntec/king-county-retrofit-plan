@@ -81,9 +81,7 @@ landingpage_ui <- function(go_button, learn_button) {
   column(width = 6,
          tags$img(src = "img1.jpeg", style = backgroundImageCSS))
       ),
-  paste0(
-        "Copyright © ", Sys.Date() %>% lubridate::year(), " Geosyntec Consultants, Inc."
-      ),
+
   br(),
   a('Open Source License Info',href='https://github.com/Geosyntec/king-county-retrofit-plan/blob/c84c5d96f1f830d7de9136a70486413ccfbc031d/LICENSE')
 
